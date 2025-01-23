@@ -9,7 +9,13 @@ if (!players[socket.id]) {
     players[socket.id] = { x: currentPlayer.x, y: currentPlayer.y };
 }
 
-const estrellas = [{ x: 50, y: 50 }, { x: 100, y: 100 }, { x: 150, y: 150 }, { x: 110, y: 80 }, { x: 20, y: 500 }, { x: 230, y: 40 },{ x: 410, y: 120 }, { x: 130, y: 120 }]; // Array de estrellas
+const estrellas = []; // Array de estrellas
+const maxEstrellas = 10;
+for (let i = 0; i < maxEstrellas; i++) {
+    const x = Math.floor(Math.random() * (canvas.width / 20)) * 20;
+    const y = Math.floor(Math.random() * (canvas.height / 20)) * 20;
+    estrellas.push({ x, y });
+}
 
 let selectColor = document.getElementById('color');
 selectColor.addEventListener('change', () => {
