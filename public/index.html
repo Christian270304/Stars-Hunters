@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego Multijugador</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    
+    <div class="header">
+        <h1>Stars Hunters</h1>
+        <div class="buttons">
+            <button id="adminButton">Administrador</button>
+            <button id="playButton">Play</button>
+        </div>
+    </div>
+    <div class="game-container" id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="550"></canvas>
+    <div id="colorNave">
+        <select name="Colro" id="color" aria-placeholder="Cambiar color de la nave">
+            <option value="red">Rojo</option>
+        <option value="green">Verde</option>
+        <option value="yellow">Amarillo</option>
+        <option value="purple">Morado</option>
+        <option value="orange">Naranja</option>
+        <option value="pink">Rosa</option>
+        </select>
+        
+    </div>
+    <div id="botones">
+        <buttons id="red">Rojo</buttons>
+        <buttons id="green">Verde</buttons>
+        <buttons id="yellow">Amarillo</buttons>
+        <buttons></buttons>
+        <buttons></buttons>
+        <buttons></buttons>
+    </div>
+
+        <div class="scoreboard" id="scoreboard">Puntuación: 0</div>
+    </div>
+    
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="js/socket.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
