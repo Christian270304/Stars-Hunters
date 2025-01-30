@@ -2,15 +2,20 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const authController = require('./controllers/authController');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+app.use('/auth', authController);
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/../public/game.html');
+});
+
 const PORT = 3000;
 
 const players = {};
-const stars = {};
 
 // Servir archivos estáticos
 app.use(express.static(path.join(__dirname, '../public')));

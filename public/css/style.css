@@ -54,14 +54,20 @@ body {
     background: url('https://placehold.co/30x30/FFFF00/000000/png?text=Star') no-repeat center center;
     background-size: contain;
 }
-.scoreboard {
+.text-scoreboard {
     position: absolute;
     top: 10px;
     left: 10px;
     font-size: 1.2em;
 }
+.scoreboard {
+    position: absolute;
+    top: 10px;
+    left: 105px;
+    font-size: 1.2em;
+}
 
-#botones button{
+#colores button{
     font-family: 'Press Start 2P', cursive;
     background-color: #444;
     color: #fff;
@@ -71,4 +77,5 @@ body {
     margin: 0 10px;
     cursor: pointer;
     transition: background-color 0.3s;
+    z-index: 100;
 }

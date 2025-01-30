@@ -28,15 +28,17 @@ for (let i = 0; i < maxEstrellas; i++) {
     estrellas.push({ x, y });
 }
 
-let selectColor = document.getElementById('color');
-selectColor.addEventListener('change', () => {
-    colorNave = selectColor.value;
-});
+// let buttonsDiv = document.getElementById('color');
+// buttonsDiv.addEventListener('click', (event) => {
+//     if (event.target.tagName === 'BUTTON') {
+//         colorNave = event.target.dataset.color;
+//     }
+// });
 
 function drawEstrellas() {
     ctx.fillStyle = 'white';
     estrellas.forEach((estrella) => {
-        ctx.fillRect(estrella.x, estrella.y, 20, 20);
+        ctx.fillRect(estrella.x, estrella.y, 10, 10);
     });
 }
 
@@ -45,6 +47,7 @@ function drawPlayers() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     let score = document.getElementById('scoreboard');
+    let scoreValue = parseInt(score.value);
     for (const id in players) {
         const player = players[id];
         ctx.fillStyle = id === socket.id ? colorNave : 'blue'; // Diferenciar al jugador actual
@@ -52,7 +55,12 @@ function drawPlayers() {
     }
     // Verificar colisión con estrellas
     estrellas.forEach((estrella, index) => {
-        if (currentPlayer.x === estrella.x && currentPlayer.y === estrella.y) {
+        if (
+            currentPlayer.x < estrella.x + 10 &&
+            currentPlayer.x + playerSize > estrella.x &&
+            currentPlayer.y < estrella.y + 10 &&
+            currentPlayer.y + playerSize > estrella.y
+        ) {
             estrellas.splice(index, 1); // Eliminar estrella si hay colisión
             score.innerText = parseInt(score.innerText) + 1; // Incrementar el puntaje
         }
