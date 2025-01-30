@@ -10,7 +10,7 @@ const io = socketIo(server);
 
 app.use('/auth', authController);
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/../public/game.html');
+    res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 const PORT = 3000;
@@ -52,5 +52,5 @@ io.on('connection', (socket) => {
 
 // Iniciar el servidor
 server.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor corriendo en http://localhost/Stars-Hunters/public/game.html`);
 });
