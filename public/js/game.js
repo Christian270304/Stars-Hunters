@@ -20,25 +20,45 @@ if (!players[socket.id]) {
     players[socket.id] = { x: currentPlayer.x, y: currentPlayer.y };
 }
 
-const estrellas = []; // Array de estrellas
+const estrellas = []; // Array vacío al inicio
 const maxEstrellas = 10;
-for (let i = 0; i < maxEstrellas; i++) {
-    const x = Math.floor(Math.random() * (canvas.width / 20)) * 20;
-    const y = Math.floor(Math.random() * (canvas.height / 20)) * 20;
-    estrellas.push({ x, y });
-}
-
-/*let selectColor = document.getElementById('color');
-selectColor.addEventListener('change', () => {
-    colorNave = selectColor.value;
-});*/
+let intervalEstrellas = 5000; // Tiempo para que aparezca una nueva estrella (ms)
+let despawnTime = 20000; // Tiempo para que una estrella desaparezca (ms)
 
 function drawEstrellas() {
+   // Limpia el canvas antes de dibujar
     ctx.fillStyle = 'white';
     estrellas.forEach((estrella) => {
         ctx.fillRect(estrella.x, estrella.y, 20, 20);
     });
 }
+
+// Genera una estrella cada cierto tiempo
+setInterval(() => {
+    if (estrellas.length < maxEstrellas) {
+        const x = Math.floor(Math.random() * (canvas.width / 20)) * 20;
+        const y = Math.floor(Math.random() * (canvas.height / 20)) * 20;
+        const estrella = { x, y };
+
+        estrellas.push(estrella);
+
+        // Despawning de la estrella después de 10 segundos
+        setTimeout(() => {
+            const index = estrellas.indexOf(estrella);
+            if (index !== -1) {
+                estrellas.splice(index, 1);
+            }
+        }, despawnTime);
+    }
+}, intervalEstrellas);
+
+// Renderiza las estrellas continuamente
+function animate() {
+    drawEstrellas();
+    requestAnimationFrame(animate);
+}
+
+animate();
 
 // Dibujar todos los jugadores
 function drawPlayers() {
@@ -127,10 +147,10 @@ document.addEventListener('keyup', (event) => {
 
 // Función para mover al jugador a intervalos
 function movePlayer() {
-    if (moving.up) currentPlayer.y -= velocidad;
-    if (moving.down) currentPlayer.y += velocidad;
-    if (moving.left) currentPlayer.x -= velocidad;
-    if (moving.right) currentPlayer.x += velocidad;
+    if (moving.up) currentPlayer.y = Math.max(0, currentPlayer.y - velocidad);
+    if (moving.down) currentPlayer.y = Math.min(canvasHeight - playerSize, currentPlayer.y + velocidad);
+    if (moving.left) currentPlayer.x = Math.max(0, currentPlayer.x - velocidad);
+    if (moving.right) currentPlayer.x = Math.min(canvasWidth - playerSize, currentPlayer.x + velocidad);
 
     // Actualizar posición local
     players[socket.id].x = currentPlayer.x;
@@ -139,6 +159,8 @@ function movePlayer() {
     // Enviar movimiento al servidor
     socket.emit('move', currentPlayer);
 }
+
+
 
 // Iniciar un intervalo para mover al jugador
 setInterval(movePlayer, 1000 / 60);  // 60 veces por segundo (60 FPS)
