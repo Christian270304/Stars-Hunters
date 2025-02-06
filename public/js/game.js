@@ -3,8 +3,8 @@ const ctx = canvas.getContext('2d');
 let colorNave = 'red';
 // Variables del jugador actual
 // Tamaño del canvas
-const canvasWidth = 900;
-const canvasHeight = 500;
+const canvasWidth = 1000;
+const canvasHeight = 550;
 
 // Tamaño del jugador
 const playerSize = 20;
@@ -22,7 +22,7 @@ if (!players[socket.id]) {
 
 const estrellas = []; // Array vacío al inicio
 const maxEstrellas = 10;
-let intervalEstrellas = 5000; // Tiempo para que aparezca una nueva estrella (ms)
+let intervalEstrellas; // Tiempo para que aparezca una nueva estrella (ms)
 let despawnTime = 20000; // Tiempo para que una estrella desaparezca (ms)
 
 const estrellaImg = new Image();
@@ -37,15 +37,20 @@ function drawEstrellas() {
 }
 
 // Genera una estrella cada cierto tiempo
-setInterval(() => {
+function spawnStar() {
+    // Si aún no alcanzamos el máximo, generamos una estrella
     if (estrellas.length < maxEstrellas) {
-        const x = Math.floor(Math.random() * (canvas.width / 20)) * 20;
-        const y = Math.floor(Math.random() * (canvas.height / 20)) * 20;
+        const step = 30;
+        const maxX =  Math.floor((canvas.width - 50) / step);
+        const maxY = Math.floor((canvas.height - 50) / step);
+
+        const x = Math.floor(Math.random() * (maxX + 1)) * step;
+        const y = Math.floor(Math.random() * (maxY + 1)) * step;
         const estrella = { x, y };
 
         estrellas.push(estrella);
 
-        // Despawning de la estrella después de 10 segundos
+        // Configurar el "despawning" de la estrella después de 'despawnTime' milisegundos
         setTimeout(() => {
             const index = estrellas.indexOf(estrella);
             if (index !== -1) {
@@ -53,7 +58,27 @@ setInterval(() => {
             }
         }, despawnTime);
     }
-}, intervalEstrellas);
+    
+    // Determinar el próximo intervalo en función de la cantidad de estrellas
+    let nextInterval;
+    if (estrellas.length < 2) {
+        nextInterval = 500;  // Más rápido si no hay estrellas
+    } else if (estrellas.length < 4) {
+        nextInterval = 1000;
+    } else if (estrellas.length < 6) {
+        nextInterval = 3000;
+    } else if(estrellas.length < 8) {
+        nextInterval = 5000;  // Más lento si ya hay varias estrellas
+    } else {
+        nextInterval = 7000;
+    }
+    
+    // Programar la siguiente generación con setTimeout
+    setTimeout(spawnStar, nextInterval);
+}
+
+// Iniciar la generación de estrellas
+spawnStar();
 
 // Renderiza las estrellas continuamente
 function animate() {
@@ -130,7 +155,7 @@ document.addEventListener('keydown', (event) => {
         setTimeout(() => {
             powerupActive = false;
             velocidad = 1;
-            temps = 0; // 🔥 Reiniciar el contador cuando se usa la hipervelocidad
+            temps = 0; 
         }, powerupDuration);
     }
 });
@@ -138,6 +163,7 @@ document.addEventListener('keydown', (event) => {
 
 // Detectar cuando se presionan las teclas
 document.addEventListener('keydown', (event) => {
+
     if (event.key === 'ArrowUp') moving.up = true;
     if (event.key === 'ArrowDown') moving.down = true;
     if (event.key === 'ArrowLeft') moving.left = true;
@@ -146,6 +172,7 @@ document.addEventListener('keydown', (event) => {
 
 // Detectar cuando se sueltan las teclas
 document.addEventListener('keyup', (event) => {
+
     if (event.key === 'ArrowUp') moving.up = false;
     if (event.key === 'ArrowDown') moving.down = false;
     if (event.key === 'ArrowLeft') moving.left = false;
@@ -171,8 +198,6 @@ function movePlayer() {
 
 // Iniciar un intervalo para mover al jugador
 setInterval(movePlayer, 1000 / 60);  // 60 veces por segundo (60 FPS)
-
-
 // Loop para redibujar a los jugadores
 setInterval(drawPlayers, 1000 / 60);
 setInterval(drawEstrellas, 1000 / 60);
