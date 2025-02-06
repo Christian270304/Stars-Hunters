@@ -25,11 +25,14 @@ const maxEstrellas = 10;
 let intervalEstrellas = 5000; // Tiempo para que aparezca una nueva estrella (ms)
 let despawnTime = 20000; // Tiempo para que una estrella desaparezca (ms)
 
+const estrellaImg = new Image();
+estrellaImg.src = '../public/images/estrella.svg';
+
 function drawEstrellas() {
-   // Limpia el canvas antes de dibujar
+    // Limpia el canvas antes de dibujar    
     ctx.fillStyle = 'white';
     estrellas.forEach((estrella) => {
-        ctx.fillRect(estrella.x, estrella.y, 20, 20);
+        ctx.drawImage(estrellaImg, estrella.x, estrella.y, 50, 50);
     });
 }
 
@@ -72,7 +75,12 @@ function drawPlayers() {
     }
     // Verificar colisión con estrellas
     estrellas.forEach((estrella, index) => {
-        if (currentPlayer.x === estrella.x && currentPlayer.y === estrella.y) {
+        if (
+            currentPlayer.x < estrella.x + 50 &&
+            currentPlayer.x + playerSize > estrella.x &&
+            currentPlayer.y < estrella.y + 50 &&
+            currentPlayer.y + playerSize > estrella.y
+          ) {
             estrellas.splice(index, 1); // Eliminar estrella si hay colisión
             score.innerText = parseInt(score.innerText) + 1; // Incrementar el puntaje
         }
@@ -111,7 +119,6 @@ setInterval(() => {
     let div = document.getElementById('hipervelocitat');
     div.innerHTML = hipervelocitat ? "Hipervelocitat disponible" : "Hipervelocitat NO disponible";
 }, 1);
-
 
 
 document.addEventListener('keydown', (event) => {
