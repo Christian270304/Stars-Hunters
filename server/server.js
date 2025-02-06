@@ -1,17 +1,19 @@
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
 const path = require('path');
-const authController = require('./controllers/authController');
+const authController = require('../server/controllers/authController.js'); // Ruta relativa desde la raíz
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 
-app.use('/auth', authController);
+// Ruta de archivos estáticos (Public/)
+app.use(express.static(path.join(__dirname, '../public'))); 
+
+// Ruta principal
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    res.sendFile(path.join(__dirname, '../public/game.html'));
 });
+
 
 const PORT = 3000;
 

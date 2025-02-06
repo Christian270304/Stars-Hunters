@@ -3,11 +3,13 @@ const ctx = canvas.getContext('2d');
 let colorNave = 'red';
 // Variables del jugador actual
 // Tamaño del canvas
-const canvasWidth = 1000;
+const canvasWidth = 1285;
 const canvasHeight = 550;
 
 // Tamaño del jugador
 const playerSize = 20;
+const visualPlayerSize = 50;
+let moving = { up: false, down: false, left: false, right: false };
 
 // Generar una posición aleatoria dentro del canvas, ajustada a coordenadas enteras
 let currentPlayer = {
@@ -20,10 +22,10 @@ if (!players[socket.id]) {
     players[socket.id] = { x: currentPlayer.x, y: currentPlayer.y };
 }
 
-const estrellas = []; // Array vacío al inicio
+const estrellas = []; 
 const maxEstrellas = 10;
-let intervalEstrellas; // Tiempo para que aparezca una nueva estrella (ms)
-let despawnTime = 20000; // Tiempo para que una estrella desaparezca (ms)
+let intervalEstrellas; 
+let despawnTime = 20000; 
 
 const estrellaImg = new Image();
 estrellaImg.src = '../public/images/estrella.svg';
@@ -32,6 +34,7 @@ function drawEstrellas() {
     // Limpia el canvas antes de dibujar    
     ctx.fillStyle = 'white';
     estrellas.forEach((estrella) => {
+        estrellaImg.style.transform = 'rotate(90deg)';
         ctx.drawImage(estrellaImg, estrella.x, estrella.y, 50, 50);
     });
 }
@@ -88,15 +91,25 @@ function animate() {
 
 animate();
 
+const nauJugador = new Image();
+nauJugador.src = '../public/images/nau3_old.png';
+
+if(moving.down){
+
+    nauJugador.style.transform('rotate(180deg)');
+}
+
 // Dibujar todos los jugadores
 function drawPlayers() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    
 
     let score = document.getElementById('scoreboard');
     for (const id in players) {
         const player = players[id];
         ctx.fillStyle = id === socket.id ? colorNave : 'blue'; // Diferenciar al jugador actual
-        ctx.fillRect(player.x, player.y, 20, 20);
+        ctx.drawImage(nauJugador ,player.x, player.y, visualPlayerSize, visualPlayerSize);
     }
     // Verificar colisión con estrellas
     estrellas.forEach((estrella, index) => {
@@ -122,7 +135,7 @@ let powerupDuration = 5000; // Duración del powerup en milisegundos
 let powerupActive = false;
 
 // Variables para controlar el movimiento
-let moving = { up: false, down: false, left: false, right: false };
+
 
 // Iniciar un intervalo de 1 segundo
 setInterval(() => {
@@ -181,10 +194,29 @@ document.addEventListener('keyup', (event) => {
 
 // Función para mover al jugador a intervalos
 function movePlayer() {
-    if (moving.up) currentPlayer.y = Math.max(0, currentPlayer.y - velocidad);
-    if (moving.down) currentPlayer.y = Math.min(canvasHeight - playerSize, currentPlayer.y + velocidad);
-    if (moving.left) currentPlayer.x = Math.max(0, currentPlayer.x - velocidad);
-    if (moving.right) currentPlayer.x = Math.min(canvasWidth - playerSize, currentPlayer.x + velocidad);
+    if (moving.up) {
+        
+        currentPlayer.y = Math.max(0, currentPlayer.y - velocidad);
+        nauJugador.style.transform = 'rotate(0deg)';
+    }
+    
+    if (moving.down) {
+        
+        currentPlayer.y = Math.min(canvasHeight - visualPlayerSize, currentPlayer.y + velocidad);
+        nauJugador.style.transform = 'rotate(180deg)';
+    }
+    
+    if (moving.left) {
+
+        currentPlayer.x = Math.max(0, currentPlayer.x - velocidad);
+        nauJugador.style.transform = 'rotate(270deg)';
+    }
+
+    if (moving.right) {
+
+        currentPlayer.x = Math.min(canvasWidth - visualPlayerSize, currentPlayer.x + velocidad);
+        nauJugador.style.transform = 'rotate(90deg)';
+    }
 
     // Actualizar posición local
     players[socket.id].x = currentPlayer.x;

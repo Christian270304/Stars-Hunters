@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io('http://localhost:3000');
 const players = {}; // Objeto para almacenar los jugadores en el cliente
 
 // Al recibir el estado inicial de todos los jugadores
