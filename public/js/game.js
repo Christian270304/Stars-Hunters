@@ -22,7 +22,7 @@ let estrellas = [];
 const maxEstrellas = 10;
 const despawnTime = 20000;
 const estrellaImg = new Image();
-estrellaImg.src = '../images/estrella.svg';
+estrellaImg.src = '../assets/estrella.svg';
 
 // Dibujar las estrellas
 function drawEstrellas() {
@@ -55,9 +55,9 @@ function checkCollisions() {
 
 // Dibujar los jugadores
 const nauJugador = new Image();
-nauJugador.src = '../images/nau3_old.png'; // Verifica que la ruta sea correcta
+nauJugador.src = '../assets/nau3_old.png'; // Verifica que la ruta sea correcta
 const nauEnemic = new Image();
-nauEnemic.src = '../images/nauEnemiga.png'; // Verifica que la ruta sea correcta
+nauEnemic.src = '../assets/nauEnemiga.png'; // Verifica que la ruta sea correcta
 // Añadir la función onload para asegurarse de que la imagen se cargue antes de dibujar
 nauJugador.onload = () => {
     update();  
