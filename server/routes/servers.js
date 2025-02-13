@@ -18,12 +18,12 @@ export default (pool) => {
                 // Crear el namespace en Socket.IO
                 createNamespace(namespace);
 
-                res.status(200).json({ message: 'Server created', namespace });
+                res.status(200).json({ message: 'Servidor creat', namespace });
             } else {
-                res.status(500).json({ message: 'Error al crear el servidor: No rows affected' });
+                res.status(500).json({ message: 'Error en crear el servidor: No s\'han afectat files' });
             }
         } catch (error) {
-            res.status(500).json({ message: 'Error al crear el servidor', error });
+            res.status(500).json({ message: 'Error en crear el servidor', error });
         }
     });
 
@@ -36,7 +36,7 @@ export default (pool) => {
 
             res.status(200).json(results);
         } catch (error) {
-            res.status(500).json({ message: 'Error al listar los servidores', error });
+            res.status(500).json({ message: 'Error en llistar els servidors', error });
         }
     });
 

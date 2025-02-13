@@ -11,7 +11,6 @@ socket.on('playerID', (id) => {
 
 // Recibe el estado del juego (jugadores y estrellas) cuando se conecta
 socket.on('gameState', (state) => {
-    console.log('Recibido gameState:', state);
     players = state.players;  // Actualiza los jugadores
     estrellas = state.estrellas; // Actualiza las estrellas
     drawPlayers();  // Dibuja los jugadores

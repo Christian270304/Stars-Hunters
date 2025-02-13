@@ -7,7 +7,10 @@ import path from 'path';
 import authRoutes from './routes/auth.js';
 import serverRoutes from './routes/servers.js';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import os from 'os';
+
+dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
