@@ -235,5 +235,5 @@ setInterval(checkResourceUsage, 5000);
 
 // Iniciar el servidor después de conectar a la base de datos
 server.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor corriendo en http://localhost/Stars-Hunters/public/game.html`);
 });
