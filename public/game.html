@@ -11,15 +11,17 @@
     
     <div class="header">
         <h1>Stars Hunters</h1>
-        <div class="buttons">
+        <div>
             <div id="hipervelocitat">Hipervelocitat NO disponible</div>
-            <button id="adminButton">Administrador</button>
-            <button id="playButton">Play</button>
         </div>
     </div>
     <div class="game-container" id="gameContainer">
-        <canvas id="gameCanvas" width="1536" height="550"></canvas>
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
     
+    
+        <label class="text-scoreboard">Puntuació: </label>
+        <div class="scoreboard" id="scoreboard">0</div>
+    </div>
     <div id="colores">
         <buttons id="red">Rojo</buttons>
         <buttons id="green">Verde</buttons>
@@ -28,12 +30,6 @@
         <buttons></buttons>
         <buttons></buttons>
     </div>
-    <div id="scores">
-    </div>
-        <label class="text-scoreboard">Puntuació: </label>
-        <div class="scoreboard" id="scoreboard">0</div>
-    </div>
-    
     
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script src="js/socket.js"></script>

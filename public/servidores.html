@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="ca">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,12 +51,23 @@
                 <button class="connect-button">Conectar</button>
             </div>
         </div>
+        
 
         <!-- Pie de página -->
         <div class="footer">
             <p>Star Hunter © 2023 Todos los derechos reservados.</p>
         </div>
     </div>
+    <!-- Modal -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2 class="modal-title">Conexión al servidor</h2>
+        <button class="modal-button" id="adminBtn">Admin</button>
+        <button class="modal-button" id="playBtn">Jugar</button>
+    </div>
+</div>
+
     <script>
         async function createServer() {
             const serverName = document.getElementById('serverName').value;
@@ -101,11 +112,40 @@
 
         function selectServer(namespace) {
             console.log(`Conectando al servidor con namespace: ${namespace}`);
-            // Redirigir a la página del juego con el namespace como parámetro
-            window.location.href = `/game.html?namespace=${namespace}`;
+            showModal(namespace);
+        }
+
+        function showModal(namespace) {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'block';
+            modal.style.display = 'flex';
+
+            // Manejar clic en el botón "Admin"
+            document.getElementById('adminBtn').onclick = () => {
+                window.location.href = `/admin.html?namespace=${namespace}`;
+            };
+
+            // Manejar clic en el botón "Jugar"
+            document.getElementById('playBtn').onclick = () => {
+                window.location.href = `/game.html?namespace=${namespace}`;
+            };
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'none';
+        }
+
+        // Cerrar el modal al hacer clic fuera del contenido del modal
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
         }
 
         loadServers();
+
     </script>
 </body>
 </html>

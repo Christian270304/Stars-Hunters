@@ -16,29 +16,18 @@ body {
     margin: 0;
     font-size: 2em;
 }
-.buttons {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-}
-.buttons button {
-    font-family: 'Press Start 2P', cursive;
-    background-color: #444;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    margin: 0 10px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-.buttons button:hover {
-    background-color: #666;
-}
 .game-container {
+    display: flex;
     position: relative;
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    justify-content: center;
+    border-color:white ;
+}
+.game-container canvas {
+    border: white;
+    stroke: #ffffff;
 }
 .spaceship {
     position: absolute;

@@ -54,21 +54,21 @@ async function connectToDatabase() {
 }
 
 await connectToDatabase();
-        
+     
 // Mildware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Servir archivos estáticos
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Rutas 
-app.use('/auth', authRoutes(pool));
-app.use('/servers', serverRoutes(pool));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
+app.use('/auth', authRoutes(pool));
+app.use('/servers', serverRoutes(pool));
 
-
-// Servir archivos estáticos
-app.use(express.static(path.join(__dirname, '../public')));
 
 // Crear múltiples namespaces para diferentes instancias de juego
 const namespaces = {};
@@ -254,5 +254,5 @@ setInterval(checkResourceUsage, 5000);
 
 // Iniciar el servidor después de conectar a la base de datos
 server.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost/Stars-Hunters/public/game.html`);
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
