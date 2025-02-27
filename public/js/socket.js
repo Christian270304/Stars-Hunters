@@ -14,5 +14,5 @@ socket.on('gameState', (state) => {
     players = state.players;  // Actualiza los jugadores
     estrellas = state.estrellas; // Actualiza las estrellas
     drawPlayers();  // Dibuja los jugadores
-    drawEstrellas();  // Dibuja las estrellas
+
 });

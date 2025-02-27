@@ -10,17 +10,26 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import os from 'os';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({path: path.resolve(__dirname, '../.env')});
 
 const PORT = process.env.PORT || 3000;
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
-app.use(cors());
+app.use(cors(
+    {
+        origin: ['http://localhost:3000'],
+        methods: ['GET', 'POST'],
+        allowedHeaders: ['Content-Type' , 'Authorization'],
+        credentials: true
+    }
+));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+app.options('*', cors());
 
 let pool;
 
@@ -31,7 +40,7 @@ async function connectToDatabase() {
             host: process.env.DB_HOST,
             user: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
-            database: process.env.DB_DATABSE,
+            database: process.env.DB_DATABASE,
             waitForConnections: true,
             connectionLimit: 10, // Ajusta este valor según tus necesidades
             queueLimit: 0
@@ -65,25 +74,32 @@ app.use(express.static(path.join(__dirname, '../public')));
 const namespaces = {};
 const gameStates = {}; // Guardará el estado de cada namespace
 
+const canvasWidth = 1476; // Ancho del área de juego
+const canvasHeight = 500; // Alto del área de juego
 // Función para generar estrellas en posiciones aleatorias
+
 function generarEstrellas() {
-    return Array.from({ length: 10 }, () => ({
-        x: Math.random() * 800,  // Asumiendo que el área de juego es de 800x600
-        y: Math.random() * 600
+    return Array.from({ length: 5 }, () => ({
+        x: Math.random() * (canvasWidth - 50),
+        y: Math.random() * (canvasHeight - 50)
     }));
 }
-const canvasWidth = 800; // Ancho del área de juego
-const canvasHeight = 600; // Alto del área de juego
+
+
 function generarEstrellaAleatoria(gameState) {
+
     let nuevaEstrella;
     let colisionada;
 
     do {
+
+        setInterval(() => {
         // Generar una posición aleatoria
         nuevaEstrella = {
-            x: Math.random() * canvasWidth,
-            y: Math.random() * canvasHeight
+            x: Math.random() * (canvasWidth - 50),
+            y: Math.random() * (canvasHeight - 50)
         };
+        }, 1000); // 30Hz, emite cada 33ms
 
         // Verificar si la nueva estrella colisiona con alguna estrella existente
         colisionada = false;

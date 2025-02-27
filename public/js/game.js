@@ -2,7 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Tamaño del canvas y tamaño del jugador
-const canvasWidth = 1285;
+const canvasWidth = 1536;
 const canvasHeight = 550;
 const playerSize = 20;
 const visualPlayerSize = 50;
@@ -19,8 +19,6 @@ let players = {};
 
 // Estrellas
 let estrellas = [];
-const maxEstrellas = 10;
-const despawnTime = 20000;
 const estrellaImg = new Image();
 estrellaImg.src = '../assets/estrella.svg';
 
@@ -119,7 +117,7 @@ setInterval(() => {
 
 // Habilitar hipervelocidad con la tecla 'h'
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'h' && hipervelocitat) {
+    if (event.key === ' ' && hipervelocitat) {
         hipervelocitat = false;
         powerupActive = true;
         velocidad = 5;
@@ -134,18 +132,18 @@ document.addEventListener('keydown', (event) => {
 
 // Mover el jugador con las teclas
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowUp') moving.up = true;
-    if (event.key === 'ArrowDown') moving.down = true;
-    if (event.key === 'ArrowLeft') moving.left = true;
-    if (event.key === 'ArrowRight') moving.right = true;
+    if (event.key === 'ArrowUp' || event.key == "w") {event.preventDefault(); moving.up = true;}
+    if (event.key === 'ArrowDown' || event.key == "s") { event.preventDefault(); moving.down = true;}
+    if (event.key === 'ArrowLeft' || event.key == "a" ) { event.preventDefault(); moving.left = true;}
+    if (event.key === 'ArrowRight' || event.key == "d") { event.preventDefault(); moving.right = true;}
     movePlayer();
 });
 
 document.addEventListener('keyup', (event) => {
-    if (event.key === 'ArrowUp') moving.up = false;
-    if (event.key === 'ArrowDown') moving.down = false;
-    if (event.key === 'ArrowLeft') moving.left = false;
-    if (event.key === 'ArrowRight') moving.right = false;
+    if (event.key === 'ArrowUp' || event.key == "w") moving.up = false; 
+    if (event.key === 'ArrowDown' || event.key == "s") moving.down = false;
+    if (event.key === 'ArrowLeft' || event.key == "a" ) moving.left = false;
+    if (event.key === 'ArrowRight' || event.key == "d") moving.right = false;
 });
 
 // Mover al jugador en el canvas
