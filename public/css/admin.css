@@ -5,57 +5,57 @@ body {
     margin: 0;
     padding: 20px;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
 }
 
 .admin-container {
     background: rgba(0, 0, 0, 0.7);
     padding: 30px;
     border-radius: 15px;
+    width: 100%;
     max-width: 600px;
-    margin: 0 auto;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-
-.admin-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.admin-header h1 {
-    color: #4CAF50;
-    font-size: 32px;
-    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    align-items: center;
 }
 
 .form-group label {
-    display: block;
-    margin-bottom: 8px;
+    min-width: 150px;
     color: #ccc;
     font-weight: bold;
+    text-align: right;
 }
 
 .form-group input {
-    width: 100%;
     padding: 12px;
     background: rgba(255, 255, 255, 0.1);
     border: none;
     border-radius: 8px;
     color: #fff;
     font-size: 16px;
-    margin-bottom: 10px;
+    transition: border-color 0.3s;
 }
 
 .button-group {
     display: flex;
-    justify-content: space-around;
-    margin-bottom: 30px;
+    justify-content: flex-end;
+    gap: 15px;
 }
 
-.config-button {
+.config-button,
+.start-button {
     padding: 15px 30px;
     background: #4CAF50;
     color: #fff;
@@ -63,18 +63,11 @@ body {
     border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
-    transition: all 0.3s ease;
+    transition: background 0.3s ease;
 }
 
 .start-button {
-    padding: 15px 30px;
     background: #FFA000;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s ease;
 }
 
 .config-button:hover {
@@ -86,23 +79,23 @@ body {
 }
 
 .canvas-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: 2px solid #4CAF50;
     padding: 10px;
     border-radius: 10px;
     margin-bottom: 20px;
+    margin-top: 2%;
+    width: fit-content; /* Se ajustará al tamaño del canvas */
+    height: fit-content;
 }
 
 canvas {
-    border: 1px dashed #ccc;
+    width: 100%;
+    height: auto;
+    display: block;
     border-radius: 8px;
-    background: linear-gradient(to bottom, #000, #1a2542);
-}
-
-.result-message {
-    margin-top: 10px;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 8px;
-    text-align: center;
-    display: none;
+    background: repeating-radial-gradient(circle at 0 0, transparent, transparent 4px, #1a2542 5px);
+    background-size: 20px 20px;
 }

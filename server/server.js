@@ -20,14 +20,12 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
-app.use(cors(
-    {
-        origin: ['http://localhost:3000'],
-        methods: ['GET', 'POST'],
-        allowedHeaders: ['Content-Type' , 'Authorization'],
-        credentials: true
-    }
-));
+app.use(cors({
+    origin: "*",
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
 
 app.options('*', cors());
 
@@ -73,50 +71,13 @@ app.use('/servers', serverRoutes(pool));
 // Crear múltiples namespaces para diferentes instancias de juego
 const namespaces = {};
 const gameStates = {}; // Guardará el estado de cada namespace
+let config = {};
 
 const canvasWidth = 1476; // Ancho del área de juego
 const canvasHeight = 500; // Alto del área de juego
 // Función para generar estrellas en posiciones aleatorias
 
-function generarEstrellas() {
-    return Array.from({ length: 5 }, () => ({
-        x: Math.random() * (canvasWidth - 50),
-        y: Math.random() * (canvasHeight - 50)
-    }));
-}
 
-
-function generarEstrellaAleatoria(gameState) {
-
-    let nuevaEstrella;
-    let colisionada;
-
-    do {
-
-        setInterval(() => {
-        // Generar una posición aleatoria
-        nuevaEstrella = {
-            x: Math.random() * (canvasWidth - 50),
-            y: Math.random() * (canvasHeight - 50)
-        };
-        }, 1000); // 30Hz, emite cada 33ms
-
-        // Verificar si la nueva estrella colisiona con alguna estrella existente
-        colisionada = false;
-        for (const estrella of gameState.estrellas) {
-            const distancia = Math.sqrt(
-                Math.pow(nuevaEstrella.x - estrella.x, 2) + Math.pow(nuevaEstrella.y - estrella.y, 2)
-            );
-            if (distancia < 50) {  // Verificamos que las estrellas no estén demasiado cerca (ajustable)
-                colisionada = true;
-                break;
-            }
-        }
-
-    } while (colisionada);  // Repetir hasta encontrar una posición sin colisiones
-
-    return nuevaEstrella;
-}
 
 export const createNamespace = (namespace) => {
     console.log(`Creando namespace: ${namespace}`);
@@ -131,13 +92,28 @@ export const createNamespace = (namespace) => {
     nsp.on('connection', (socket) => {
         console.log(`Nuevo jugador conectado: ${socket.id}`);
 
-        // Asignar una posición inicial aleatoria al jugador
-        const player = {
-            x: Math.random() * 800,
-            y: Math.random() * 600,
-            id: socket.id,
-            rotation: 0
-        };
+        socket.on('rol', (data) => {
+            if (data === 'Player') {
+                // Asignar una posición inicial aleatoria al jugador
+                const player = {
+                    x: Math.random() * 800,
+                    y: Math.random() * 600,
+                    id: socket.id,
+                    rotation: 0
+                };
+            } 
+        });
+
+        socket.on('config', (data) => {
+            console.log('Configuración recibida:', data);
+            config = {
+                width: data.width,
+                height: data.height
+            }
+            nsp.emit('config', config);
+        });
+
+        
 
         gameState.players.set(socket.id, player);
 
@@ -174,6 +150,7 @@ export const createNamespace = (namespace) => {
                 });
             }
         });
+        
         
 
         // Recibir evento de eliminación de estrella
@@ -221,6 +198,48 @@ export const createNamespace = (namespace) => {
         });
     }, 1000 / 30); // 30Hz, emite cada 33ms
 };
+
+
+function generarEstrellas() {
+    return Array.from({ length: 5 }, () => ({
+        x: Math.random() * (canvasWidth - 50),
+        y: Math.random() * (canvasHeight - 50)
+    }));
+}
+
+
+function generarEstrellaAleatoria(gameState) {
+
+    let nuevaEstrella;
+    let colisionada;
+
+    do {
+
+        setInterval(() => {
+        // Generar una posición aleatoria
+        nuevaEstrella = {
+            x: Math.random() * (canvasWidth - 50),
+            y: Math.random() * (canvasHeight - 50)
+        };
+        }, 1000); // 30Hz, emite cada 33ms
+
+        // Verificar si la nueva estrella colisiona con alguna estrella existente
+        colisionada = false;
+        for (const estrella of gameState.estrellas) {
+            const distancia = Math.sqrt(
+                Math.pow(nuevaEstrella.x - estrella.x, 2) + Math.pow(nuevaEstrella.y - estrella.y, 2)
+            );
+            if (distancia < 50) {  // Verificamos que las estrellas no estén demasiado cerca (ajustable)
+                colisionada = true;
+                break;
+            }
+        }
+
+    } while (colisionada);  // Repetir hasta encontrar una posición sin colisiones
+
+    return nuevaEstrella;
+}
+
 
 // Aumentar los valores de keepAliveTimeout y headersTimeout
 server.keepAliveTimeout = 120 * 1000; // 120 segundos

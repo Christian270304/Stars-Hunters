@@ -7,34 +7,41 @@
     <title>Panel de Admin - Star Hunter</title>
 </head>
 <body>
-    <div class="admin-container">
-        <div class="admin-header">
-            <h1>Configuración de Juego</h1>
-        </div>
+    <body>
+        <div class="admin-container">
+            
 
-        <div class="form-group">
-            <label for="amplada">Amplada (640-1280)</label>
-            <input type="number" min="640" max="1280" id="amplada" placeholder="Introduce la anchura" required>
+            <div class="admin-header">
+                <h1>Configuración de Juego</h1>
+            </div>
+            
+            <div class="form-group">
+                <label for="width">Amplada (640-1280)</label>
+                <input type="number" min="640" max="1280" id="width" value="640" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="height">Alçada (480-960)</label>
+                <input type="number" min="480" max="960" id="height" value="480" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="estrellas">Estrellas a capturar</label>
+                <input type="number" id="estrellas" value="100" required>
+            </div>
+    
+            <div class="button-group">
+                <button class="config-button" id="configurar">Configurar</button>
+                <button class="start-button" id="encender">Encender</button>
+            </div>
         </div>
-
-        <div class="form-group">
-            <label for="alçada">Alçada (480-960)</label>
-            <input type="number" min="480" max="960" id="alçada" placeholder="Introduce la altura" required>
+    
+        <div class="canvas-container">
+            <canvas id="gameCanvas" width="640" height="480"></canvas>
         </div>
-
-        <div class="form-group">
-            <label for="estrellas">Estrellas a capturar</label>
-            <input type="number" id="estrellas" placeholder="Número de estrellas" required>
-        </div>
-
-        <div class="button-group">
-            <button class="config-button" id="configurar">Configurar</button>
-            <button class="start-button" id="encender">Encender</button>
-        </div>
-    </div>
-
-    <div class="canvas-container">
-        <canvas id="gameCanvas" width="640" height="480"></canvas>
-    </div>
+    
+        
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="js/admin.js"></script>
 </body>
 </html>
