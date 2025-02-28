@@ -122,6 +122,7 @@
 
             // Manejar clic en el botón "Admin"
             document.getElementById('adminBtn').onclick = () => {
+                this.disabled = true;
                 window.location.href = `/admin.html?namespace=${namespace}`;
             };
 

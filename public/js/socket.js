@@ -3,6 +3,9 @@ const urlParams = new URLSearchParams(window.location.search);
 const namespace = urlParams.get('namespace');
 const socket = io(`http://localhost:3000${namespace}`, { transports: ['websocket'],upgrade: true });
 
+let config = {};
+
+
 socket.on('connect', () => {
     console.log('Conectado al servidor');
     socket.emit('rol', 'Player');
@@ -18,6 +21,21 @@ socket.on('playerID', (id) => {
 socket.on('gameState', (state) => {
     players = state.players;  // Actualiza los jugadores
     estrellas = state.estrellas; // Actualiza las estrellas
-    drawPlayers();  // Dibuja los jugadores
+    //drawPlayers();  // Dibuja los jugadores
 
+});
+
+socket.on('config', (configuracion) => {
+    console.log('Configuración:', configuracion);
+    config = {
+        width: configuracion.width,
+        height: configuracion.height,
+        estrellas: configuracion.estrellas
+    }
+    document.getElementById('gameCanvas').width = config.width;
+    document.getElementById('gameCanvas').height = config.height;
+});
+
+socket.on('gameState', (players) => {
+    console.log('gameState', players);
 });

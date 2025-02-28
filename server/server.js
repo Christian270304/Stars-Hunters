@@ -69,9 +69,8 @@ app.use('/servers', serverRoutes(pool));
 
 
 // Crear múltiples namespaces para diferentes instancias de juego
-const namespaces = {};
+const namespaces = {}; // Guardará los namespaces creados
 const gameStates = {}; // Guardará el estado de cada namespace
-let config = {};
 
 const canvasWidth = 1476; // Ancho del área de juego
 const canvasHeight = 500; // Alto del área de juego
@@ -80,7 +79,12 @@ const canvasHeight = 500; // Alto del área de juego
 
 
 export const createNamespace = (namespace) => {
-    console.log(`Creando namespace: ${namespace}`);
+    console.log(`Creando namespace: ${namespace}`); // ✅ Comprobación 1
+    if (!namespaces[namespace]) {
+        namespaces[namespace] = { players: {}, config: {width: 640, height: 480}, users: {} };
+    }
+    console.log("Estado después de inicializar:", namespaces[namespace]); // ✅ Comprobación 2
+    
     const nsp = io.of(namespace);
     const gameState = {
         estrellas: generarEstrellas(),
@@ -94,46 +98,66 @@ export const createNamespace = (namespace) => {
 
         socket.on('rol', (data) => {
             if (data === 'Player') {
-                // Asignar una posición inicial aleatoria al jugador
-                const player = {
-                    x: Math.random() * 800,
-                    y: Math.random() * 600,
-                    id: socket.id,
-                    rotation: 0
-                };
-            } 
+                namespaces[namespace].players[socket.id] = {id: socket.id};
+                nsp.emit('config', namespaces[namespace].config);
+            } else {
+                if (namespaces[namespace].users && Object.values(namespaces[namespace].users).length > 0) {
+                    socket.emit('adminExist', 'Ya hay un administrador conectado');
+                } else {
+                    namespaces[namespace].users[socket.id] = { rol: 'Admin' };
+                    socket.emit('config', namespaces[namespace].config);
+                }
+            }
         });
 
         socket.on('config', (data) => {
             console.log('Configuración recibida:', data);
-            config = {
+            // Guardar la configuración en el objeto namespace
+            namespaces[namespace].config = {
                 width: data.width,
-                height: data.height
+                height: data.height,
+                estrellas: data.estrellas
             }
-            nsp.emit('config', config);
+            nsp.emit('config', namespaces[namespace].config);
+        });
+
+        socket.on('startGame',() => {
+            // Generar a los jugadores en posiciones aleatorias
+            Object.values(namespaces[namespace].players).forEach(player => {
+                player.x = Math.random() * namespaces[namespace].config.width;
+                player.y = Math.random() * namespaces[namespace].config.height;
+            });
+
+            nsp.emit('gameState', namespaces[namespace].players);
+            // Generar las estrellas una a una y enviarlas al cliente
+
+            // Emitir al cliente que el juego a comenzado
+
+            //
+            
         });
 
         
 
-        gameState.players.set(socket.id, player);
+        //gameState.players.set(socket.id, player);
 
         // Emitir el estado inicial al nuevo jugador
-        socket.emit('gameState', {
-            estrellas: gameState.estrellas,
-            players: Object.fromEntries(gameState.players) // Convertimos el Map a un objeto
-        });
+        // socket.emit('gameState', {
+        //     estrellas: gameState.estrellas,
+        //     players: Object.fromEntries(gameState.players) // Convertimos el Map a un objeto
+        // });
 
         // Enviar al cliente su propio ID
-        socket.emit('playerID', socket.id);
+        //socket.emit('playerID', socket.id);
 
         // Notificar a otros jugadores sobre el nuevo jugador
-        socket.broadcast.emit('newPlayer', player);
+        //socket.broadcast.emit('newPlayer', player);
 
         // Emitir a todos los jugadores el estado completo con el nuevo jugador
-        nsp.emit('gameState', {
-            estrellas: gameState.estrellas,
-            players: Object.fromEntries(gameState.players)
-        });
+        // nsp.emit('gameState', {
+        //     estrellas: gameState.estrellas,
+        //     players: Object.fromEntries(gameState.players)
+        // });
 
         // Manejo de movimiento del jugador
         socket.on('move', (data) => {
@@ -144,10 +168,10 @@ export const createNamespace = (namespace) => {
                 player.rotation = data.rotation; // Guardamos la rotación recibida
         
                 // Emitir actualización SOLO para el jugador que se movió
-                nsp.emit('gameState', {
-                    estrellas: gameState.estrellas,
-                    players: Object.fromEntries(gameState.players)
-                });
+                // nsp.emit('gameState', {
+                //     estrellas: gameState.estrellas,
+                //     players: Object.fromEntries(gameState.players)
+                // });
             }
         });
         
@@ -168,10 +192,10 @@ export const createNamespace = (namespace) => {
             }
         
             // Emitir el estado actualizado del juego solo al namespace actual
-            nsp.emit('gameState', {
-                estrellas: gameState.estrellas,
-                players: Object.fromEntries(gameState.players)
-            });
+            // nsp.emit('gameState', {
+            //     estrellas: gameState.estrellas,
+            //     players: Object.fromEntries(gameState.players)
+            // });
         });
 
         // Manejo de desconexión de jugador
@@ -180,28 +204,27 @@ export const createNamespace = (namespace) => {
             // Eliminar el jugador del Map
             gameState.players.delete(socket.id);
             // Emitir el estado actualizado a todos los jugadores
-            nsp.emit('gameState', {
-                estrellas: gameState.estrellas,
-                players: Object.fromEntries(gameState.players) // Convertimos el Map a un objeto
-            });
+            // nsp.emit('gameState', {
+            //     estrellas: gameState.estrellas,
+            //     players: Object.fromEntries(gameState.players) // Convertimos el Map a un objeto
+            // });
         });
     });
 
-    namespaces[namespace] = nsp;
 
     // Emisión periódica del estado del juego a todos los jugadores (30Hz, 33ms)
     setInterval(() => {
         // Solo emite si hay cambios, evita emitir a todos siempre
-        nsp.emit('gameState', {
-            estrellas: gameState.estrellas,
-            players: Object.fromEntries(gameState.players) // Convierte el Map a un objeto
-        });
+        // nsp.emit('gameState', {
+        //     estrellas: gameState.estrellas,
+        //     players: Object.fromEntries(gameState.players) // Convierte el Map a un objeto
+        // });
     }, 1000 / 30); // 30Hz, emite cada 33ms
 };
 
 
-function generarEstrellas() {
-    return Array.from({ length: 5 }, () => ({
+function generarEstrellas(total) {
+    return Array.from({ length: total }, () => ({
         x: Math.random() * (canvasWidth - 50),
         y: Math.random() * (canvasHeight - 50)
     }));
