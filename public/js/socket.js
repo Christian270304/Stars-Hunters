@@ -4,7 +4,7 @@ const namespace = urlParams.get('namespace');
 const socket = io(`http://localhost:3000${namespace}`, { transports: ['websocket'],upgrade: true });
 
 let config = {};
-
+let players = {};
 
 socket.on('connect', () => {
     console.log('Conectado al servidor');
@@ -36,6 +36,8 @@ socket.on('config', (configuracion) => {
     document.getElementById('gameCanvas').height = config.height;
 });
 
-socket.on('gameState', (players) => {
-    console.log('gameState', players);
+socket.on('gameState', (Players) => {
+    console.log('gameState', Players);
+    players = Players;
+    drawPlayers();
 });

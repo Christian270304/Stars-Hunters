@@ -70,36 +70,37 @@ app.use('/servers', serverRoutes(pool));
 
 // Crear múltiples namespaces para diferentes instancias de juego
 const namespaces = {}; // Guardará los namespaces creados
-const gameStates = {}; // Guardará el estado de cada namespace
-
-const canvasWidth = 1476; // Ancho del área de juego
-const canvasHeight = 500; // Alto del área de juego
-// Función para generar estrellas en posiciones aleatorias
-
+const speed = 1.5;
+const visualPlayerSize = 50;
 
 
 export const createNamespace = (namespace) => {
-    console.log(`Creando namespace: ${namespace}`); // ✅ Comprobación 1
+    console.log(`Creando namespace: ${namespace}`); 
     if (!namespaces[namespace]) {
-        namespaces[namespace] = { players: {}, config: {width: 640, height: 480}, users: {} };
+        namespaces[namespace] = { players: {}, config: {width: 640, height: 480, estrellas: 5, gameStarted: false}, estrellas: {}, users: {} };
     }
-    console.log("Estado después de inicializar:", namespaces[namespace]); // ✅ Comprobación 2
     
     const nsp = io.of(namespace);
-    const gameState = {
-        estrellas: generarEstrellas(),
-        players: new Map() // Usamos Map para un acceso más rápido
-    };
-
-    gameStates[namespace] = gameState; // Guardar el estado globalmente
 
     nsp.on('connection', (socket) => {
         console.log(`Nuevo jugador conectado: ${socket.id}`);
-
-        socket.on('rol', (data) => {
+        // Emitir al cliente su ID
+        socket.emit('playerId', socket.id);
+        
+        socket.on('rol', (data, username) => {
             if (data === 'Player') {
                 namespaces[namespace].players[socket.id] = {id: socket.id};
-                nsp.emit('config', namespaces[namespace].config);
+                namespaces[namespace].players[socket.id].name = username;
+                
+                namespaces[namespace].players[socket.id].x = Math.random() * namespaces[namespace].config.width;
+                namespaces[namespace].players[socket.id].y = Math.random() * namespaces[namespace].config.height;
+                
+                socket.emit('config', namespaces[namespace].config);
+                socket.emit('gameState', namespaces[namespace]);
+                if (namespaces[namespace].config.gameStarted) {
+                    socket.emit('gameStart');
+                }
+                
             } else {
                 if (namespaces[namespace].users && Object.values(namespaces[namespace].users).length > 0) {
                     socket.emit('adminExist', 'Ya hay un administrador conectado');
@@ -111,70 +112,53 @@ export const createNamespace = (namespace) => {
         });
 
         socket.on('config', (data) => {
-            console.log('Configuración recibida:', data);
             // Guardar la configuración en el objeto namespace
             namespaces[namespace].config = {
                 width: data.width,
                 height: data.height,
                 estrellas: data.estrellas
             }
+            //namespaces[namespace].cuadrantes = generarCuadrantes(data.width, data.height);
             nsp.emit('config', namespaces[namespace].config);
         });
 
-        socket.on('startGame',() => {
-            // Generar a los jugadores en posiciones aleatorias
-            Object.values(namespaces[namespace].players).forEach(player => {
-                player.x = Math.random() * namespaces[namespace].config.width;
-                player.y = Math.random() * namespaces[namespace].config.height;
-            });
 
-            nsp.emit('gameState', namespaces[namespace].players);
-            // Generar las estrellas una a una y enviarlas al cliente
-
-            // Emitir al cliente que el juego a comenzado
-
-            //
-            
+        socket.on("startGame", () => {
+            namespaces[namespace].config.gameStarted = true;
+            namespaces[namespace].estrellas = {};
+            nsp.emit("gameStart");
+           
+        
+            // Generar estrellas una por una
+            let starsGenerated = 0;
+            const generateStarInterval = setInterval(() => {
+                if (starsGenerated < namespaces[namespace].config.estrellas) {
+                    const estrella = generarEstrellaAleatoria(namespaces[namespace]);
+                    namespaces[namespace].estrellas[estrella.id] = estrella;
+                    nsp.emit('gameState', namespaces[namespace]);
+                    starsGenerated++;
+                } else {
+                    clearInterval(generateStarInterval);
+                }
+            }, 1000); // Intervalo de 1 segundo entre estrellas
         });
 
-        
-
-        //gameState.players.set(socket.id, player);
-
-        // Emitir el estado inicial al nuevo jugador
-        // socket.emit('gameState', {
-        //     estrellas: gameState.estrellas,
-        //     players: Object.fromEntries(gameState.players) // Convertimos el Map a un objeto
-        // });
-
-        // Enviar al cliente su propio ID
-        //socket.emit('playerID', socket.id);
-
-        // Notificar a otros jugadores sobre el nuevo jugador
-        //socket.broadcast.emit('newPlayer', player);
-
-        // Emitir a todos los jugadores el estado completo con el nuevo jugador
-        // nsp.emit('gameState', {
-        //     estrellas: gameState.estrellas,
-        //     players: Object.fromEntries(gameState.players)
-        // });
 
         // Manejo de movimiento del jugador
         socket.on('move', (data) => {
-            const player = gameState.players.get(socket.id);
-            if (player) {
-                player.x = data.x;
-                player.y = data.y;
-                player.rotation = data.rotation; // Guardamos la rotación recibida
+            const player = namespaces[namespace].players[socket.id];
+            if (!player) return;
         
-                // Emitir actualización SOLO para el jugador que se movió
-                // nsp.emit('gameState', {
-                //     estrellas: gameState.estrellas,
-                //     players: Object.fromEntries(gameState.players)
-                // });
-            }
+            const newX = player.x + (data.right ? speed : 0) - (data.left ? speed : 0);
+            const newY = player.y + (data.down ? speed : 0) - (data.up ? speed : 0);
+        
+            player.x = Math.max(0, Math.min(namespaces[namespace].config.width - visualPlayerSize, newX));
+            player.y = Math.max(0, Math.min(namespaces[namespace].config.height - visualPlayerSize, newY));
+            player.angle = data.angle;
+        
+            checkCollisions(nsp, namespace, socket.id);
+            nsp.emit("gameState", namespaces[namespace]);
         });
-        
         
 
         // Recibir evento de eliminación de estrella
@@ -202,12 +186,8 @@ export const createNamespace = (namespace) => {
         socket.on('disconnect', () => {
             console.log(`Jugador desconectado: ${socket.id}`);
             // Eliminar el jugador del Map
-            gameState.players.delete(socket.id);
-            // Emitir el estado actualizado a todos los jugadores
-            // nsp.emit('gameState', {
-            //     estrellas: gameState.estrellas,
-            //     players: Object.fromEntries(gameState.players) // Convertimos el Map a un objeto
-            // });
+            delete namespaces[namespace].players[socket.id];
+            nsp.emit('gameState', namespaces[namespace]);
         });
     });
 
@@ -222,77 +202,66 @@ export const createNamespace = (namespace) => {
     }, 1000 / 30); // 30Hz, emite cada 33ms
 };
 
+// Función para generar estrella con posición segura
+function generarEstrellaAleatoria(namespaceData) {
+    const id = Math.random().toString(36).substr(2, 9);
+    let isValidPosition = false;
+    let x, y;
 
-function generarEstrellas(total) {
-    return Array.from({ length: total }, () => ({
-        x: Math.random() * (canvasWidth - 50),
-        y: Math.random() * (canvasHeight - 50)
-    }));
-}
-
-
-function generarEstrellaAleatoria(gameState) {
-
-    let nuevaEstrella;
-    let colisionada;
-
-    do {
-
-        setInterval(() => {
-        // Generar una posición aleatoria
-        nuevaEstrella = {
-            x: Math.random() * (canvasWidth - 50),
-            y: Math.random() * (canvasHeight - 50)
-        };
-        }, 1000); // 30Hz, emite cada 33ms
-
-        // Verificar si la nueva estrella colisiona con alguna estrella existente
-        colisionada = false;
-        for (const estrella of gameState.estrellas) {
-            const distancia = Math.sqrt(
-                Math.pow(nuevaEstrella.x - estrella.x, 2) + Math.pow(nuevaEstrella.y - estrella.y, 2)
-            );
-            if (distancia < 50) {  // Verificamos que las estrellas no estén demasiado cerca (ajustable)
-                colisionada = true;
+    while (!isValidPosition) {
+        x = Math.random() * (namespaceData.config.width - 50);
+        y = Math.random() * (namespaceData.config.height - 50);
+        
+        // Verificar distancia con jugadores
+        isValidPosition = true;
+        for (const playerId in namespaceData.players) {
+            const player = namespaceData.players[playerId];
+            const distance = Math.hypot(player.x - x, player.y - y);
+            if (distance < 100) { // 100px de distancia mínima
+                isValidPosition = false;
                 break;
             }
         }
-
-    } while (colisionada);  // Repetir hasta encontrar una posición sin colisiones
-
-    return nuevaEstrella;
+    }
+    
+    return { id, x, y };
 }
 
+// Función de detección de colisiones
+function checkCollisions(nsp, namespace, playerId) {
+    const gameState = namespaces[namespace];
+    const player = gameState.players[playerId];
+    
+    if (!player) return;
 
-// Aumentar los valores de keepAliveTimeout y headersTimeout
-server.keepAliveTimeout = 120 * 1000; // 120 segundos
-server.headersTimeout = 120 * 1000; // 120 segundos
+    for (const starId of Object.keys(gameState.estrellas)) {
+        const estrella = gameState.estrellas[starId];
+        const distance = Math.hypot(
+            player.x - estrella.x,
+            player.y - estrella.y
+        );
 
-function checkResourceUsage() {
-    // Memoria RAM
-    const memoryUsage = process.memoryUsage();
-    const ramUsedMB = memoryUsage.rss / 1024 / 1024; // RSS es la memoria total usada
-
-    // CPU (carga promedio en 1 minuto por núcleo)
-    const cores = os.cpus().length;
-    const load1Min = os.loadavg()[0]; // Carga promedio en 1 minuto
-    const loadPerCore = load1Min / cores; // Carga normalizada por núcleo
-
-    // Umbrales
-    const MAX_RAM_MB = 512;
-    const MAX_CPU_LOAD = 2; // Carga por núcleo
-
-    // Mensajes en rojo (ANSI escape code: \x1b[31m)
-    if (ramUsedMB > MAX_RAM_MB) {
-        console.log('\x1b[31m%s\x1b[0m', `⚠️ ¡ALERTA! RAM superada: ${ramUsedMB.toFixed(2)} MB (Límite: ${MAX_RAM_MB} MB)`);
-    }
-    if (loadPerCore > MAX_CPU_LOAD) {
-        console.log('\x1b[31m%s\x1b[0m', `⚠️ ¡ALERTA! CPU superada: ${loadPerCore.toFixed(2)} (Límite: ${MAX_CPU_LOAD} por núcleo)`);
+        if (distance < 30) { // Radio de colisión
+            // Eliminar estrella
+            delete gameState.estrellas[starId];
+            
+            // Generar nueva estrella
+            const nuevaEstrella = generarEstrellaAleatoria(gameState);
+            gameState.estrellas[nuevaEstrella.id] = nuevaEstrella;
+            
+            // Actualizar puntuación
+            player.score = (player.score || 0) + 1;
+            
+            // Notificar al jugador
+            nsp.to(playerId).emit('updateScore', player.score);
+            
+            // Actualizar estado del juego para todos
+            nsp.emit('gameState', gameState);
+            break;
+        }
     }
 }
 
-// Ejecutar la verificación cada 5 segundos
-setInterval(checkResourceUsage, 5000);
 
 // Iniciar el servidor después de conectar a la base de datos
 server.listen(PORT, () => {

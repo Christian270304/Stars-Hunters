@@ -1,207 +1,202 @@
+// Conexión al servidor
+const urlParams = new URLSearchParams(window.location.search);
+const namespace = urlParams.get('namespace');
+const socket = io(`http://localhost:3000${namespace}`, { transports: ['websocket'], upgrade: true });
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
-// Tamaño del canvas y tamaño del jugador
-
-const playerSize = 20;
 const visualPlayerSize = 50;
+const username = localStorage.getItem('username');
 
-// Variables del jugador actual
-let currentPlayer = {
-    x: Math.floor(Math.random() * (config.width - playerSize)), 
-    y: Math.floor(Math.random() * (config.height - playerSize))
-};
+const modal = document.getElementById('scoreModal');
+const closeModal = document.querySelector('.close');
 
-// let moving = { up: false, down: false, left: false, right: false };
-// let colorNave = 'blue';
-// let players = {};
+let tabPressed = false;
+let config = {};
+let renderPlayers = {}; 
+let estrellas = {};
+let currentPlayerId;
+let moving = { up: false, down: false, left: false, right: false, angle: 0 };
+let lastUpdate = Date.now();
 
-// // Estrellas
-// let estrellas = [];
-// const estrellaImg = new Image();
-// estrellaImg.src = '../assets/estrella.svg';
+// Función de interpolación
+function lerp(start, end, amt) {
+    return (1 - amt) * start + amt * end;
+}
 
-// // Dibujar las estrellas
-// function drawEstrellas() {
-//     ctx.fillStyle = 'white';
-//     estrellas.forEach((estrella) => {
-//         ctx.drawImage(estrellaImg, estrella.x, estrella.y, 50, 50);
-//     });
-// }
+socket.on('connect', () => {
+    console.log('Conectado al servidor');
+    socket.emit('rol', 'Player', username);
+});
 
-// // Detectar colisiones con estrellas
-// function checkCollisions() {
-//     for (let i = 0; i < estrellas.length; i++) {
-//         const estrella = estrellas[i];
+socket.on('playerId', (id) => {
+    currentPlayerId = id;
+});
 
-//         if (
-//             currentPlayer.x < estrella.x + 50 &&
-//             currentPlayer.x + playerSize > estrella.x &&
-//             currentPlayer.y < estrella.y + 50 &&
-//             currentPlayer.y + playerSize > estrella.y
-//         ) {
-//             estrellas.splice(i, 1); // Eliminar estrella del cliente
-//             let score = document.getElementById('scoreboard');
-//             score.innerText = parseInt(score.innerText) + 1; // Incrementar puntaje
+socket.on('gameState', (state) => {
+    updateScores(state.players);
+    // Interpolar posiciones
+    const now = Date.now();
+    const dt = now - lastUpdate;
+    lastUpdate = now;
 
-//             // Emitir evento al servidor para eliminar la estrella
-//             socket.emit('removeEstrella', estrella);
-//         }
-//     }
-// }
+    for (const id in state.players) {
+        if (!renderPlayers[id]) {
+            renderPlayers[id] = { ...state.players[id] };
+        } else {
+            const renderPlayer = renderPlayers[id];
+            const serverPlayer = state.players[id];
+            const t = Math.min(1, dt / 1000 * 60); // Factor de interpolación
+            
+            renderPlayer.x = lerp(renderPlayer.x, serverPlayer.x, t);
+            renderPlayer.y = lerp(renderPlayer.y, serverPlayer.y, t);
+            renderPlayer.angle = serverPlayer.angle;
+        }
+    }
+    estrellas = state.estrellas;
+});
 
-// // Dibujar los jugadores
-// const nauJugador = new Image();
-// nauJugador.src = '../assets/nau3_old.png'; // Verifica que la ruta sea correcta
-// const nauEnemic = new Image();
-// nauEnemic.src = '../assets/nauEnemiga.png'; // Verifica que la ruta sea correcta
-// // Añadir la función onload para asegurarse de que la imagen se cargue antes de dibujar
-// nauJugador.onload = () => {
-//     update();  
-// };
+socket.on('config', (configuracion) => {
+    console.log('Configuración:', configuracion);
+    config = {
+        width: configuracion.width,
+        height: configuracion.height,
+        estrellas: configuracion.estrellas
+    }
+    document.getElementById('gameCanvas').width = config.width;
+    document.getElementById('gameCanvas').height = config.height;
+});
 
-// nauJugador.onerror = () => {
-//     console.log("Error al cargar la imagen.");
-// };
 
-// // Función para dibujar los jugadores
-// function drawPlayers() {
-//     ctx.clearRect(0, 0, canvas.width, canvas.height);
+function closeInstructions() {
+    document.getElementById("instructionOverlay").classList.remove("active");
+    gameLoop();
+} 
 
-//     drawEstrellas(); // Dibujar estrellas antes de los jugadores
+socket.on('gameStart', () => {
+const instructionOverlay = document.getElementById('instructionOverlay');
+instructionOverlay.classList.add('active');
+       
 
-//     let score = document.getElementById('scoreboard');
-//     for (const id in players) {
-//         const player = players[id];
-//         const playerImage = id === socket.id ? nauJugador : nauEnemic; // Usar la imagen correcta
+});
 
-//         ctx.save(); // Guarda el contexto
+// Manejo de entrada mejorado
+function handleInput() {
+    const player = renderPlayers[currentPlayerId];
+    if (!player) return;
 
-//         // Mueve el origen de coordenadas al centro del jugador
-//         ctx.translate(player.x + visualPlayerSize / 2, player.y + visualPlayerSize / 2);
+    calculateAngle();
+    
+    // Emitir estado de movimiento a 60 FPS
+    socket.emit('move', moving);
+}
 
-//         // Aplica la rotación
-//         ctx.rotate(player.rotation);
+// Bucle de juego optimizado
+function gameLoop() {
+    handleInput();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+const estrellaImg = new Image();
+estrellaImg.src = '../assets/estrella.svg';
+const nauJugador = new Image();
+nauJugador.src = '../assets/nau3_old.png'; // Verifica que la ruta sea correcta
+const nauEnemic = new Image();
+nauEnemic.src = '../assets/nauEnemiga.png'; // Verifica que la ruta sea correcta
 
-//         // Dibujar la nave centrada
-//         ctx.drawImage(playerImage, -visualPlayerSize / 2, -visualPlayerSize / 2, visualPlayerSize, visualPlayerSize);
+// Función de dibujo actualizada
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-//         ctx.restore(); // Restaura el contexto
-//     }
-// }
+    // Dibujar estrellas
+    for (const starId in estrellas) {
+        const estrella = estrellas[starId];
+        ctx.drawImage(estrellaImg, estrella.x, estrella.y, 50, 50);
+    }
 
-// // Mover al jugador
-// let velocidad = 1; // Velocidad normal del jugador
-// let hipervelocitat = false;
-// let temps = 0;
-// let interval = 1000;
-// let powerupDuration = 5000; // Duración del powerup en milisegundos
-// let powerupActive = false;
+    // Dibujar jugadores interpolados
+    for (const id in renderPlayers) {
+        const player = renderPlayers[id];
+        if (!player) continue;
 
-// // Controlar hipervelocidad
-// setInterval(() => {
-//     if (!powerupActive && !hipervelocitat) {
-//         temps++;
-//         if (temps === 10) {
-//             hipervelocitat = true;
-//             temps = 0;
-//         }
-//     }
-// }, interval);
+        const playerImage = id === currentPlayerId ? nauJugador : nauEnemic;
+        
+        ctx.save();
+        ctx.translate(player.x + visualPlayerSize / 2, player.y + visualPlayerSize / 2);
+        ctx.rotate(player.angle);
+        ctx.drawImage(playerImage, -visualPlayerSize / 2, -visualPlayerSize / 2, visualPlayerSize, visualPlayerSize);
+        ctx.restore();
+    }
+}
 
-// setInterval(() => {
-//     let div = document.getElementById('hipervelocitat');
-//     div.innerHTML = hipervelocitat ? "Hipervelocitat disponible" : "Hipervelocitat NO disponible";
-// }, 1);
+// Manejadores de teclado actualizados
+document.addEventListener('keydown', (event) => {
+    const key = event.key.toLowerCase();
+    if (key === 'w' || key === 'arrowup') moving.up = true;
+    if (key === 's' || key === 'arrowdown') moving.down = true;
+    if (key === 'a' || key === 'arrowleft') moving.left = true;
+    if (key === 'd' || key === 'arrowright') moving.right = true;
+    if (key === 'tab') {
+        event.preventDefault();
+        if (!tabPressed) {
+            tabPressed = true;
+            modal.classList.add('active');
+        }
+    }
+});
 
-// // Habilitar hipervelocidad con la tecla 'h'
-// document.addEventListener('keydown', (event) => {
-//     if (event.key === ' ' && hipervelocitat) {
-//         hipervelocitat = false;
-//         powerupActive = true;
-//         velocidad = 5;
+document.addEventListener('keyup', (event) => {
+    const key = event.key.toLowerCase();
+    if (key === 'w' || key === 'arrowup') moving.up = false;
+    if (key === 's' || key === 'arrowdown') moving.down = false;
+    if (key === 'a' || key === 'arrowleft') moving.left = false;
+    if (key === 'd' || key === 'arrowright') moving.right = false;
+    if (key === 'tab') { 
+        event.preventDefault();
+        tabPressed = false;
+        modal.classList.remove('active');
+      }
+});
 
-//         setTimeout(() => {
-//             powerupActive = false;
-//             velocidad = 1;
-//             temps = 0;
-//         }, powerupDuration);
-//     }
-// });
+// Resto del código sin cambios...
+// Función para calcular el ángulo según la dirección del movimiento
+function calculateAngle() {
+    if (moving.up && moving.left) {
+        moving.angle = Math.PI * 1.75;
+    } 
+    else if (moving.up && moving.right) {
+        moving.angle = Math.PI / 4;
+    }
+    else if (moving.down && moving.left) {
+        moving.angle = Math.PI * 1.25;
+    }
+    else if (moving.down && moving.right) {
+        moving.angle = Math.PI * 0.75;
+    }
+    else if (moving.up) {
+        moving.angle = 0;
+    }
+    else if (moving.down) {
+        moving.angle = Math.PI;
+    }
+    else if (moving.left) {
+        moving.angle = Math.PI * 1.5;
+    }
+    else if (moving.right) {
+        moving.angle = Math.PI / 2;
+    }
+}
 
-// // Mover el jugador con las teclas
-// document.addEventListener('keydown', (event) => {
-//     if (event.key === 'ArrowUp' || event.key == "w") {event.preventDefault(); moving.up = true;}
-//     if (event.key === 'ArrowDown' || event.key == "s") { event.preventDefault(); moving.down = true;}
-//     if (event.key === 'ArrowLeft' || event.key == "a" ) { event.preventDefault(); moving.left = true;}
-//     if (event.key === 'ArrowRight' || event.key == "d") { event.preventDefault(); moving.right = true;}
-//     movePlayer();
-// });
-
-// document.addEventListener('keyup', (event) => {
-//     if (event.key === 'ArrowUp' || event.key == "w") moving.up = false; 
-//     if (event.key === 'ArrowDown' || event.key == "s") moving.down = false;
-//     if (event.key === 'ArrowLeft' || event.key == "a" ) moving.left = false;
-//     if (event.key === 'ArrowRight' || event.key == "d") moving.right = false;
-// });
-
-// // Mover al jugador en el canvas
-// function movePlayer() {
-//     if (moving.up || moving.down || moving.left || moving.right) {
-//         calculateAngle();  
-//         currentPlayer.rotation = angle;  
-//     }
-
-//     if (moving.up) currentPlayer.y = Math.max(0, currentPlayer.y - velocidad);
-//     if (moving.down) currentPlayer.y = Math.min(canvasHeight - visualPlayerSize, currentPlayer.y + velocidad);
-//     if (moving.left) currentPlayer.x = Math.max(0, currentPlayer.x - velocidad);
-//     if (moving.right) currentPlayer.x = Math.min(canvasWidth - visualPlayerSize, currentPlayer.x + velocidad);
-
-//     if (currentPlayer.id) {
-//         players[currentPlayer.id] = { 
-//             x: currentPlayer.x, 
-//             y: currentPlayer.y, 
-//             rotation: currentPlayer.rotation 
-//         };
-//         socket.emit('move', { x: currentPlayer.x, y: currentPlayer.y, rotation: currentPlayer.rotation });
-//     }
-// }
-
-// // Variables para almacenar el ángulo de rotación de la nave
-// let angle = 0;
-
-// // Función para calcular el ángulo según la dirección del movimiento
-// function calculateAngle() {
-//     if (moving.up && moving.left) {
-//         angle = Math.PI * 1.75;
-//     } 
-//     else if (moving.up && moving.right) {
-//         angle = Math.PI / 4;
-//     }
-//     else if (moving.down && moving.left) {
-//         angle = Math.PI * 1.25;
-//     }
-//     else if (moving.down && moving.right) {
-//         angle = Math.PI * 0.75;
-//     }
-//     else if (moving.up) {
-//         angle = 0;
-//     }
-//     else if (moving.down) {
-//         angle = Math.PI;
-//     }
-//     else if (moving.left) {
-//         angle = Math.PI * 1.5;
-//     }
-//     else if (moving.right) {
-//         angle = Math.PI / 2;
-//     }
-// }
-
-// // Actualizar el juego
-// function update() {
-//     movePlayer();
-//     checkCollisions();
-//     drawPlayers();
-//     requestAnimationFrame(update);
-// }
+function updateScores(players) {
+    const scoresList = document.getElementById('scoresList');
+    const sortedPlayers = Object.values(players)
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
+    
+    scoresList.innerHTML = sortedPlayers
+      .map((player, index) => `
+        <tr>
+          <td>#${index + 1}</td>
+          <td>${player.name || `${player.id.slice(0, 5)}`}</td>
+          <td>${player.score || 0}</td>
+        </tr>
+      `).join('');
+  }

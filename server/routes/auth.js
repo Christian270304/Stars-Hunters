@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcrypt';
 
 export default (pool) => {
     const router = Router(); 
@@ -11,11 +12,13 @@ export default (pool) => {
             const [results] = await connection.execute('SELECT password FROM users WHERE username = ?', [username]);
             connection.release();
 
-            if (results.length > 0 && results[0].password === password) {
+            const isMatch = await bcrypt.compare(password, results[0].password);
+            if (isMatch) {
                 res.status(200).json({ message: 'Inici de sessió amb èxit' });
             } else {
                 res.status(401).json({ message: 'Credencials invàlides' });
             }
+             
         } catch (error) {
             res.status(500).json({ message: 'Error en verificar les credencials', error });
         }
@@ -26,8 +29,9 @@ export default (pool) => {
         const { username, password } = req.body;
 
         try {
+            const hashedPassword = await bcrypt.hash(password, 10);
             const connection = await pool.getConnection();
-            const [results] = await connection.execute('INSERT INTO users (username, password) VALUES (?, ?)', [username, password]);
+            const [results] = await connection.execute('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
             connection.release();
 
             res.status(200).json({ message: 'Registre completat amb èxit' });

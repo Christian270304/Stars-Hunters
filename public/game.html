@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="ca">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego Multijugador</title>
     <link rel="stylesheet" href="css/game.css">
-    
+
 </head>
+
 <body>
-    
+
     <div class="header">
         <h1>Stars Hunters</h1>
         <div>
@@ -17,8 +19,8 @@
     </div>
     <div class="game-container" id="gameContainer">
         <canvas id="gameCanvas" width="640" height="480"></canvas>
-    
-    
+
+
         <label class="text-scoreboard">Puntuació: </label>
         <div class="scoreboard" id="scoreboard">0</div>
     </div>
@@ -30,9 +32,73 @@
         <buttons></buttons>
         <buttons></buttons>
     </div>
+
+    <div class="instruction-overlay" id="instructionOverlay">
+        <div class="instruction-container">
+            <p class="instruction-text">¡Usa las teclas para moverte!</p>
+            <div class="keyboard-container">
+                <!-- Teclas de movimiento -->
+                <div class="keyboard">
+                    <div class="row">
+                        <span class="key">W</span>
+                    </div>
+                    <div class="row">
+                        <span class="key">A</span>
+                        <span class="key">S</span>
+                        <span class="key">D</span>
+                    </div>
+                </div>
+                <p class="instruction-text">o</p>
+                <div class="keyboard">
+                    <div class="row">
+                        <span class="key">↑</span>
+                    </div>
+                    <div class="row">
+                        <span class="key">←</span>
+                        <span class="key">↓</span>
+                        <span class="key">→</span>
+                    </div>
+                </div>
+                
+                <!-- Nueva columna de controles adicionales -->
+                <div class="extra-controls">
+                    <div class="control-row">
+                        <span class="key">Tab</span>
+                        <span class="key-desc">Abrir tabla de puntos</span>
+                    </div>
+                    <div class="control-row">
+                        <span class="key">H</span>
+                        <span class="key-desc">Activar hiper velocidad</span>
+                    </div>
+                </div>
+            </div>
     
+            <button class="start-btn" onclick="closeInstructions()">¡Entendido!</button>
+        </div>
+    </div>
+    
+
+    <!-- Añade esto en tu HTML -->
+    <div id="scoreModal" class="modal">
+        <div class="modal-content">
+            <h2>🏆 Puntuaciones 🏆</h2>
+            <table class="score-table">
+                <thead>
+                    <tr>
+                        <th>Posición</th>
+                        <th>Jugador</th>
+                        <th>Puntos</th>
+                    </tr>
+                </thead>
+                <tbody id="scoresList">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
-    <script src="js/socket.js"></script>
+    <!-- <script src="js/socket.js"></script> -->
     <script src="js/game.js"></script>
 </body>
+
 </html>

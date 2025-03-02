@@ -23,6 +23,7 @@ engegarButton.style.backgroundColor = '#ccc';
 
 
 configButton.addEventListener('click', function() {
+    let boolean = true;
     engegarButton.disabled = false;
     // Devolver el color original al boton
     engegarButton.style.backgroundColor = '#FFA000';
@@ -41,18 +42,21 @@ configButton.addEventListener('click', function() {
             canvas.width = width;
             canvasContainer.style.width = `${width}px`;
         } else {
+            boolean = false;
             alert('El valor debe estar entre 640 y 1280');
         }
         if ( height >= 480 && height <= 960) {
             canvas.height = height;
             canvasContainer.style.height = `${height}px`;
         } else {
+            boolean = false;
             alert('El valor debe estar entre 480 y 960');
         }
-        if (estrellas >= 5 && estrellas <= 10) {
-            socket.emit('config', { width, height, estrellas });
-        } else {
+        if (estrellas <= 5 && estrellas >= 10) {
             alert('El valor debe estar entre 5 y 10');
+        } 
+        if (boolean) {
+            socket.emit('config', { width, height, estrellas });
         }
         // Restaurar el contenido del canvas
         ctx.putImageData(imageData, 0, 0);

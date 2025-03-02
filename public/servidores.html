@@ -147,6 +147,9 @@
 
         loadServers();
 
+        document.getElementById('serverName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') createServer();
+        });
     </script>
 </body>
 </html>

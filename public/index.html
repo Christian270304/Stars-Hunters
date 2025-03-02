@@ -77,6 +77,8 @@
                 });
 
                 if (response.ok) {
+                    // Guardar el username en el localStorage
+                    localStorage.setItem('username', username);
                     window.location.href = './servidores.html';
                 } else {
                     // Manejar el error de inicio de sesión
@@ -101,6 +103,8 @@
                 });
 
                 if (response.ok) {
+                    // Guardar el username en el localStorage
+                    localStorage.setItem('username', username);
                     window.location.href = './servidores.html';
                 } else {
                     // Manejar el error de inicio de sesión
