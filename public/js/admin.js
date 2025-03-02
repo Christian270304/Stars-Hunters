@@ -1,6 +1,6 @@
 const urlParams = new URLSearchParams(window.location.search);
 const namespace = urlParams.get('namespace');
-const socket = io(`http://localhost:3000${namespace}`, {  upgrade: true });
+const socket = io(`https://stars-hunters-production.up.railway.app${namespace}`, {  upgrade: true });
 
 const configButton = document.getElementById('configurar');
 const engegarButton = document.getElementById('encender');

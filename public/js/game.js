@@ -1,7 +1,7 @@
 // Conexión al servidor
 const urlParams = new URLSearchParams(window.location.search);
 const namespace = urlParams.get('namespace');
-const socket = io(`http://localhost:3000${namespace}`, { transports: ['websocket'], upgrade: true });
+const socket = io(`https://stars-hunters-production.up.railway.app${namespace}`, { transports: ['websocket'], upgrade: true });
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const visualPlayerSize = 50;
