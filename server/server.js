@@ -77,7 +77,7 @@ const visualPlayerSize = 50;
 export const createNamespace = (namespace) => {
     console.log(`Creando namespace: ${namespace}`); 
     if (!namespaces[namespace]) {
-        namespaces[namespace] = { players: {}, config: {width: 640, height: 480, estrellas: 5, gameStarted: false}, estrellas: {}, users: {} };
+        namespaces[namespace] = { players: {}, config: {width: 640, height: 480, estrellas: 5, gameStarted: false, gameStop: false}, estrellas: {}, users: {} };
     }
     
     const nsp = io.of(namespace);
@@ -97,9 +97,9 @@ export const createNamespace = (namespace) => {
                 
                 socket.emit('config', namespaces[namespace].config);
                 socket.emit('gameState', namespaces[namespace]);
-                if (namespaces[namespace].config.gameStarted) {
+                
                     socket.emit('gameStart');
-                }
+                
                 
             } else {
                 if (namespaces[namespace].users && Object.values(namespaces[namespace].users).length > 0) {
@@ -118,29 +118,54 @@ export const createNamespace = (namespace) => {
                 height: data.height,
                 estrellas: data.estrellas
             }
-            //namespaces[namespace].cuadrantes = generarCuadrantes(data.width, data.height);
-            nsp.emit('config', namespaces[namespace].config);
+    
+            if (namespaces[namespace].config.gameStarted) {
+                nsp.emit('config', namespaces[namespace].config);
+            }
         });
 
 
         socket.on("startGame", () => {
-            namespaces[namespace].config.gameStarted = true;
-            namespaces[namespace].estrellas = {};
-            nsp.emit("gameStart");
-           
-        
-            // Generar estrellas una por una
-            let starsGenerated = 0;
-            const generateStarInterval = setInterval(() => {
-                if (starsGenerated < namespaces[namespace].config.estrellas) {
-                    const estrella = generarEstrellaAleatoria(namespaces[namespace]);
-                    namespaces[namespace].estrellas[estrella.id] = estrella;
-                    nsp.emit('gameState', namespaces[namespace]);
-                    starsGenerated++;
-                } else {
-                    clearInterval(generateStarInterval);
-                }
-            }, 1000); // Intervalo de 1 segundo entre estrellas
+            if (!namespaces[namespace].config.gameStarted) {
+                // Resetear puntos de los jugadores
+                Object.values(namespaces[namespace].players).forEach(player => {
+                    player.score = 0;
+                });
+            } else if (!namespaces[namespace].config.gameStop) {
+                namespaces[namespace].config.gameStarted = true;
+                namespaces[namespace].estrellas = {};
+                nsp.emit("gameStart");
+    
+                // Generar estrellas una por una
+                let starsGenerated = 0;
+                const generateStarInterval = setInterval(() => {
+                    if (starsGenerated < namespaces[namespace].config.estrellas && namespaces[namespace].config.gameStarted) {
+                        const estrella = generarEstrellaAleatoria(namespaces[namespace]);
+                        namespaces[namespace].estrellas[estrella.id] = estrella;
+                        nsp.emit('gameState', namespaces[namespace]);
+                        starsGenerated++;
+                    } else {
+                        clearInterval(generateStarInterval);
+                    }
+                }, 1000); // Intervalo de 1 segundo entre estrellas
+            }
+
+            
+        });
+
+        socket.on("stopGame", () => {
+            console.log('Juego detenido');
+            // Detecar si el juego está en curso
+            if (namespaces[namespace].config.gameStarted) {
+                // Dejar de emitir el estado del juego
+                //clearInterval(generateStarInterval);
+                namespaces[namespace].config.gameStop = true;
+            } else {
+                nsp.emit('gameOver', namespaces[namespace]);
+                // Borrar los puntos de los jugadores
+                Object.values(gameState.players).forEach((p) => p.score = 0);
+            }
+            // Si el juego a acabo borrar todos los registros del namespcae
         });
 
 
@@ -156,37 +181,44 @@ export const createNamespace = (namespace) => {
             player.y = Math.max(0, Math.min(namespaces[namespace].config.height - visualPlayerSize, newY));
             player.angle = data.angle;
         
-            checkCollisions(nsp, namespace, socket.id);
-            nsp.emit("gameState", namespaces[namespace]);
+            
+            if (namespaces[namespace].config.gameStarted) {
+                checkCollisions(nsp, namespace, socket.id);
+                nsp.emit("gameState", namespaces[namespace]);
+            }
         });
         
 
         // Recibir evento de eliminación de estrella
-        socket.on('removeEstrella', (estrella) => {
-            // Eliminar la estrella del array en el gameState correspondiente
-            const index = gameState.estrellas.findIndex(
-                (e) => e.x === estrella.x && e.y === estrella.y
-            );
-            if (index !== -1) {
-                gameState.estrellas.splice(index, 1); // Eliminar la estrella de la lista
+        // socket.on('removeEstrella', (estrella) => {
+        //     // Eliminar la estrella del array en el gameState correspondiente
+        //     const index = gameState.estrellas.findIndex(
+        //         (e) => e.x === estrella.x && e.y === estrella.y
+        //     );
+        //     if (index !== -1) {
+        //         gameState.estrellas.splice(index, 1); // Eliminar la estrella de la lista
         
-                // Generar una nueva estrella en una posición aleatoria
-                const nuevaEstrella = generarEstrellaAleatoria(gameState);  // Pasa gameState aquí
-                gameState.estrellas.push(nuevaEstrella);  // Añadimos una nueva estrella
-            }
+        //         // Generar una nueva estrella en una posición aleatoria
+        //         const nuevaEstrella = generarEstrellaAleatoria(gameState);  // Pasa gameState aquí
+        //         gameState.estrellas.push(nuevaEstrella);  // Añadimos una nueva estrella
+        //     }
         
-            // Emitir el estado actualizado del juego solo al namespace actual
-            // nsp.emit('gameState', {
-            //     estrellas: gameState.estrellas,
-            //     players: Object.fromEntries(gameState.players)
-            // });
-        });
+        //     // Emitir el estado actualizado del juego solo al namespace actual
+        //     // nsp.emit('gameState', {
+        //     //     estrellas: gameState.estrellas,
+        //     //     players: Object.fromEntries(gameState.players)
+        //     // });
+        // });
 
         // Manejo de desconexión de jugador
         socket.on('disconnect', () => {
             console.log(`Jugador desconectado: ${socket.id}`);
             // Eliminar el jugador del Map
             delete namespaces[namespace].players[socket.id];
+            // Si el administrador se desconecta, eliminarlo de la lista de usuarios
+            if (namespaces[namespace].users[socket.id]) {
+                delete namespaces[namespace].users[socket.id];
+            }
             nsp.emit('gameState', namespaces[namespace]);
         });
     });
@@ -251,6 +283,14 @@ function checkCollisions(nsp, namespace, playerId) {
             
             // Actualizar puntuación
             player.score = (player.score || 0) + 1;
+
+            // Si el jugador alcanza 10 puntos, terminar el juego
+            if (player.score >= gameState.config.estrellas) {
+                gameState.config.gameStarted = false;
+                nsp.emit('gameOver', gameState);
+                
+                return;
+            }
             
             // Notificar al jugador
             nsp.to(playerId).emit('updateScore', player.score);

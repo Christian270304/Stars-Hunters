@@ -57,7 +57,7 @@ body {
 .config-button,
 .start-button {
     padding: 15px 30px;
-    background: #4CAF50;
+    background: #FFA000;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -67,15 +67,16 @@ body {
 }
 
 .start-button {
-    background: #FFA000;
-}
-
-.config-button:hover {
+    
     background: #45a049;
 }
 
-.start-button:hover {
+.config-button:hover {
     background: #FF8000;
+}
+
+.start-button:hover {
+    background: #45db4c;
 }
 
 .canvas-container {

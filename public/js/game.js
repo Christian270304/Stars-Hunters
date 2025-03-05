@@ -66,6 +66,11 @@ socket.on('config', (configuracion) => {
     document.getElementById('gameCanvas').height = config.height;
 });
 
+socket.on('gameOver', (state) => {
+    updateScores(state.players, true);
+    modal.classList.add('active');
+});
+
 
 function closeInstructions() {
     document.getElementById("instructionOverlay").classList.remove("active");
@@ -73,8 +78,8 @@ function closeInstructions() {
 } 
 
 socket.on('gameStart', () => {
-const instructionOverlay = document.getElementById('instructionOverlay');
-instructionOverlay.classList.add('active');
+    const instructionOverlay = document.getElementById('instructionOverlay');
+    instructionOverlay.classList.add('active');
        
 
 });
@@ -186,17 +191,73 @@ function calculateAngle() {
     }
 }
 
-function updateScores(players) {
+function updateScores(players, showVictory = false) {
     const scoresList = document.getElementById('scoresList');
-    const sortedPlayers = Object.values(players)
-      .sort((a, b) => (b.score || 0) - (a.score || 0));
-    
+    const winnerNameDiv = document.getElementById('winnerName');
+    const scoreModal = document.getElementById('scoreModal');
+
+    // Ordenar jugadores por puntaje
+    const sortedPlayers = Object.values(players).sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    // Generar el contenido de la tabla de puntuaciones
     scoresList.innerHTML = sortedPlayers
-      .map((player, index) => `
-        <tr>
-          <td>#${index + 1}</td>
-          <td>${player.name || `${player.id.slice(0, 5)}`}</td>
-          <td>${player.score || 0}</td>
-        </tr>
-      `).join('');
-  }
+        .map((player, index) => `
+            <tr>
+                <td>#${index + 1}</td>
+                <td>${player.name || `${player.id.slice(0, 5)}`}</td>
+                <td>${player.score || 0}</td>
+            </tr>
+        `).join('');
+
+    // Si se debe mostrar la animación de victoria
+    if (showVictory && sortedPlayers.length > 0 && sortedPlayers[0].score > 0) {
+        const winner = sortedPlayers[0]; // El jugador con más puntos
+
+        // Mostrar el nombre del ganador
+        winnerNameDiv.textContent = `🎉 ¡${winner.name || 'Jugador'} GANA! 🎉`;
+        winnerNameDiv.style.display = 'block';
+
+        // Mostrar el modal
+        scoreModal.classList.add('active');
+
+        // Iniciar la animación de confeti
+        startConfetti();
+
+        // Ocultar el modal después de 10 segundos
+        setTimeout(() => {
+            scoreModal.classList.remove('active');
+            winnerNameDiv.style.display = 'none';
+            stopConfetti();
+        }, 10000);
+    } 
+}
+
+// Función para iniciar la animación de confeti
+function startConfetti() {
+    const confettiContainer = document.createElement('div');
+    confettiContainer.classList.add('confetti-container');
+    document.body.appendChild(confettiContainer);
+
+    // Crear elementos de confeti
+    for (let i = 0; i < 100; i++) {
+        const confetti = document.createElement('div');
+        confetti.style.position = 'absolute';
+        confetti.style.width = `${Math.random() * 10 + 5}px`;
+        confetti.style.height = `${Math.random() * 10 + 5}px`;
+        confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        confetti.style.top = `${Math.random() * 100}vh`;
+        confetti.style.left = `${Math.random() * 100}vw`;
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+        confetti.style.animation = `fall ${Math.random() * 5 + 3}s linear infinite`;
+
+        confettiContainer.appendChild(confetti);
+    }
+}
+
+// Función para detener la animación de confeti
+function stopConfetti() {
+    const confettiContainer = document.querySelector('.confetti-container');
+    if (confettiContainer) {
+        confettiContainer.remove();
+    }
+}
