@@ -125,32 +125,26 @@ export const createNamespace = (namespace) => {
         });
 
 
+        // server.js (dentro del evento 'startGame')
         socket.on("startGame", () => {
-            if (!namespaces[namespace].config.gameStarted) {
-                // Resetear puntos de los jugadores
-                Object.values(namespaces[namespace].players).forEach(player => {
-                    player.score = 0;
-                });
-            } else if (!namespaces[namespace].config.gameStop) {
-                namespaces[namespace].config.gameStarted = true;
-                namespaces[namespace].estrellas = {};
-                nsp.emit("gameStart");
-    
-                // Generar estrellas una por una
-                let starsGenerated = 0;
-                const generateStarInterval = setInterval(() => {
-                    if (starsGenerated < namespaces[namespace].config.estrellas && namespaces[namespace].config.gameStarted) {
-                        const estrella = generarEstrellaAleatoria(namespaces[namespace]);
-                        namespaces[namespace].estrellas[estrella.id] = estrella;
-                        nsp.emit('gameState', namespaces[namespace]);
-                        starsGenerated++;
-                    } else {
-                        clearInterval(generateStarInterval);
-                    }
-                }, 1000); // Intervalo de 1 segundo entre estrellas
-            }
-
+            const gameState = namespaces[namespace];
             
+            if (!gameState.config.gameStarted) {
+                // Resetear estado del juego
+                gameState.config.gameStarted = true;
+                gameState.config.gameStop = false;
+                gameState.estrellas = {};
+
+                // Generar todas las estrellas al inicio
+                for (let i = 0; i < gameState.config.estrellas; i++) {
+                    const estrella = generarEstrellaAleatoria(gameState);
+                    gameState.estrellas[estrella.id] = estrella;
+                }
+
+                // Notificar a todos los clientes
+                nsp.emit("gameStart");
+                nsp.emit("gameState", gameState);
+            }
         });
 
         socket.on("stopGame", () => {
@@ -225,13 +219,10 @@ export const createNamespace = (namespace) => {
 
 
     // Emisión periódica del estado del juego a todos los jugadores (30Hz, 33ms)
+    // server.js (dentro de createNamespace)
     setInterval(() => {
-        // Solo emite si hay cambios, evita emitir a todos siempre
-        // nsp.emit('gameState', {
-        //     estrellas: gameState.estrellas,
-        //     players: Object.fromEntries(gameState.players) // Convierte el Map a un objeto
-        // });
-    }, 1000 / 30); // 30Hz, emite cada 33ms
+        nsp.emit("gameState", namespaces[namespace]); // Envía el estado actualizado
+    }, 1000 / 30); // 30 veces por segundo
 };
 
 // Función para generar estrella con posición segura

@@ -96,7 +96,7 @@ configButton.addEventListener('click', function() {
             boolean = false;
             alert('El valor debe estar entre 480 y 960');
         }
-        if (estrellas <= 5 && estrellas >= 10) {
+        if (estrellas < 5 || estrellas > 10) {
             alert('El valor debe estar entre 5 y 10');
         } 
         if (boolean) {
