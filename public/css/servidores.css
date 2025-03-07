@@ -27,6 +27,26 @@ body {
     padding: 20px;
 }
 
+.message {
+    display: none;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Estilo para el mensaje de éxito */
+.message.success {
+    background-color: #28a745; /* Verde para éxito */
+}
+
+/* Estilo para el mensaje de error */
+.message.error {
+    background-color: #dc3545; /* Rojo para error */
+}
+
 /* Encabezado */
 .server-header {
     text-align: center;

@@ -57,7 +57,7 @@ body {
 .config-button,
 .start-button {
     padding: 15px 30px;
-    background: #4CAF50;
+    background: #FFA000;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -67,16 +67,36 @@ body {
 }
 
 .start-button {
-    background: #FFA000;
-}
-
-.config-button:hover {
+    
     background: #45a049;
 }
 
-.start-button:hover {
+.config-button:hover {
     background: #FF8000;
 }
+
+.start-button:hover {
+    background: #45db4c;
+}
+
+.btn-encender {
+    background-color: #4CAF50; 
+  }
+  
+  .btn-apagar {
+    background-color: #f80000; 
+  }
+  
+  .btn-config {
+    background-color: #FFA000;
+  }
+  
+  .btn-disabled {
+    background-color: #ccc; 
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
 
 .canvas-container {
     display: flex;

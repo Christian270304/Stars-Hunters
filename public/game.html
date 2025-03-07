@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego Multijugador</title>
+    <title>Joc Multijugador</title>
     <link rel="stylesheet" href="css/game.css">
 
 </head>
@@ -24,20 +24,18 @@
         <label class="text-scoreboard">Puntuació: </label>
         <div class="scoreboard" id="scoreboard">0</div>
     </div>
+    
     <div id="colores">
-        <buttons id="red">Rojo</buttons>
-        <buttons id="green">Verde</buttons>
-        <buttons id="yellow">Amarillo</buttons>
-        <buttons></buttons>
-        <buttons></buttons>
-        <buttons></buttons>
+        <button id="verde">Verd</button>
+        <button id="azul">Blau</button>
+        <button id="naranja">Taronja</button>
+        <button id="rosa">Rosa</button>
     </div>
 
     <div class="instruction-overlay" id="instructionOverlay">
         <div class="instruction-container">
-            <p class="instruction-text">¡Usa las teclas para moverte!</p>
+            <p class="instruction-text">Utilitza les tecles per moure't!</p>
             <div class="keyboard-container">
-                <!-- Teclas de movimiento -->
                 <div class="keyboard">
                     <div class="row">
                         <span class="key">W</span>
@@ -60,7 +58,6 @@
                     </div>
                 </div>
                 
-                <!-- Nueva columna de controles adicionales -->
                 <div class="extra-controls">
                     <div class="control-row">
                         <span class="key">Tab</span>
@@ -68,26 +65,26 @@
                     </div>
                     <div class="control-row">
                         <span class="key">H</span>
-                        <span class="key-desc">Activar hiper velocidad</span>
+                        <span class="key-desc">Activar hipervelocitat</span>
                     </div>
                 </div>
             </div>
     
-            <button class="start-btn" onclick="closeInstructions()">¡Entendido!</button>
+            <button class="start-btn" onclick="closeInstructions()">Entès!</button>
         </div>
     </div>
     
 
-    <!-- Añade esto en tu HTML -->
     <div id="scoreModal" class="modal">
         <div class="modal-content">
-            <h2>🏆 Puntuaciones 🏆</h2>
+            <div class="winner-name" id="winnerName"></div>
+            <h2>🏆 Puntuacions 🏆</h2>
             <table class="score-table">
                 <thead>
                     <tr>
-                        <th>Posición</th>
+                        <th>Posició</th>
                         <th>Jugador</th>
-                        <th>Puntos</th>
+                        <th>Punts</th>
                     </tr>
                 </thead>
                 <tbody id="scoresList">

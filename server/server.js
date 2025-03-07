@@ -66,15 +66,18 @@ app.use('/servers', serverRoutes(pool));
 
 
 // Crear múltiples namespaces para diferentes instancias de juego
-const namespaces = {}; // Guardará los namespaces creados
+const namespaces = {}; 
 const speed = 1.5;
 const visualPlayerSize = 50;
+const HYPERSPEED_COOLDOWN = 20000; 
+const HYPERSPEED_MULTIPLIER = 2;
+const HYPERSPEED_DURATION = 5000;
 
 
 export const createNamespace = (namespace) => {
     console.log(`Creando namespace: ${namespace}`); 
     if (!namespaces[namespace]) {
-        namespaces[namespace] = { players: {}, config: {width: 640, height: 480, estrellas: 5, gameStarted: false}, estrellas: {}, users: {} };
+        namespaces[namespace] = { players: {}, config: {width: 640, height: 480, estrellas: 5, Hyperspeed: false, speedCooldown: false, gameStarted: false, gameStop: false}, estrellas: {}, users: {} };
     }
     
     const nsp = io.of(namespace);
@@ -96,6 +99,7 @@ export const createNamespace = (namespace) => {
                 socket.emit('gameState', namespaces[namespace]);
                 if (namespaces[namespace].config.gameStarted) {
                     socket.emit('gameStart');
+                    socket.emit('hyperspeedStatus', { status: 'available' });
                 }
                 
             } else {
@@ -109,35 +113,66 @@ export const createNamespace = (namespace) => {
         });
 
         socket.on('config', (data) => {
-            // Guardar la configuración en el objeto namespace
-            namespaces[namespace].config = {
-                width: data.width,
-                height: data.height,
-                estrellas: data.estrellas
+            const config = namespaces[namespace].config;
+
+             // Guardar la configuración en el objeto namespace
+            config.width = data.width;
+            config.height = data.height;
+            config.estrellas = data.estrellas;
+           
+            if (!namespaces[namespace].config.gameStarted) {
+                nsp.emit('config', namespaces[namespace].config);
             }
-            //namespaces[namespace].cuadrantes = generarCuadrantes(data.width, data.height);
-            nsp.emit('config', namespaces[namespace].config);
         });
 
 
+        // server.js (dentro del evento 'startGame')
         socket.on("startGame", () => {
-            namespaces[namespace].config.gameStarted = true;
-            namespaces[namespace].estrellas = {};
-            nsp.emit("gameStart");
-           
+            namespaces[namespace].config.gameStop = false;
+            
+            // Solo resetear si es un nuevo juego (no una reanudación)
+            if (!namespaces[namespace].config.gameStarted) {
+                // Resetear puntos y estrellas solo al comenzar nuevo juego
+                Object.values(namespaces[namespace].players).forEach(player => {
+                    player.score = 0;
+                });
+                namespaces[namespace].estrellas = {};
+            }
         
-            // Generar estrellas una por una
-            let starsGenerated = 0;
-            const generateStarInterval = setInterval(() => {
-                if (starsGenerated < namespaces[namespace].config.estrellas) {
-                    const estrella = generarEstrellaAleatoria(namespaces[namespace]);
-                    namespaces[namespace].estrellas[estrella.id] = estrella;
-                    nsp.emit('gameState', namespaces[namespace]);
-                    starsGenerated++;
-                } else {
-                    clearInterval(generateStarInterval);
-                }
-            }, 1000); // Intervalo de 1 segundo entre estrellas
+            namespaces[namespace].config.gameStarted = true;
+            nsp.emit("gameStart");
+            nsp.emit('hyperspeedStatus', { status: 'available' });
+        
+            // Generar estrellas solo si no existen
+            if (Object.keys(namespaces[namespace].estrellas).length === 0) {
+                let starsGenerated = 0;
+                const generateStarInterval = setInterval(() => {
+                    if (starsGenerated < namespaces[namespace].config.estrellas) {
+                        const estrella = generarEstrellaAleatoria(namespaces[namespace]);
+                        namespaces[namespace].estrellas[estrella.id] = estrella;
+                        nsp.emit('gameState', namespaces[namespace]);
+                        starsGenerated++;
+                    } else {
+                        clearInterval(generateStarInterval);
+                    }
+                }, 1500);
+            }
+        });
+
+        socket.on("stopGame", () => {
+            console.log('Juego detenido');
+            // Detecar si el juego está en curso
+            if (namespaces[namespace].config.gameStarted) {
+                // Dejar de emitir el estado del juego
+                //clearInterval(generateStarInterval);
+                nsp.emit('gameStop');
+                namespaces[namespace].config.gameStop = true;
+            } else {
+                nsp.emit('gameOver', namespaces[namespace]);
+                namespaces[namespace].estrellas = {};
+                namespaces[namespace].config.gameStarted = false;
+                Object.values(namespaces[namespace].players).forEach((p) => p.score = 0);
+            }
         });
 
 
@@ -145,38 +180,52 @@ export const createNamespace = (namespace) => {
         socket.on('move', (data) => {
             const player = namespaces[namespace].players[socket.id];
             if (!player) return;
-        
-            const newX = player.x + (data.right ? speed : 0) - (data.left ? speed : 0);
-            const newY = player.y + (data.down ? speed : 0) - (data.up ? speed : 0);
+
+            let hypervelocidad = 1;
+
+            // Verificar si la hipervelocidad está activa
+            if (player.Hyperspeed) {
+                hypervelocidad = HYPERSPEED_MULTIPLIER;
+            }
+
+            // Verificar si la tecla de hipervelocidad está presionada y no está en cooldown
+            if (data.hypervelocidad && !player.Hyperspeed && !player.speedCooldown) {
+                player.Hyperspeed = true;
+                hypervelocidad = HYPERSPEED_MULTIPLIER;
+
+                // Notificar al cliente que la hipervelocidad está activa
+                socket.emit('hyperspeedStatus', { status: 'active' });
+
+                // Desactivar la hipervelocidad después de la duración
+                setTimeout(() => {
+                    player.Hyperspeed = false;
+                    player.speedCooldown = true;
+
+                    // Notificar al cliente que la hipervelocidad ha terminado y está en cooldown
+                    socket.emit('hyperspeedStatus', { status: 'cooldown' });
+
+                    // Activar el cooldown
+                    setTimeout(() => {
+                        player.speedCooldown = false;
+
+                        // Notificar al cliente que la hipervelocidad está disponible nuevamente
+                        socket.emit('hyperspeedStatus', { status: 'available' });
+                    }, HYPERSPEED_COOLDOWN);
+                }, HYPERSPEED_DURATION);
+            }
+
+            const newX = player.x + (data.right ? speed * hypervelocidad : 0) - (data.left ? speed * hypervelocidad : 0);
+            const newY = player.y + (data.down ? speed * hypervelocidad : 0) - (data.up ? speed * hypervelocidad : 0);
         
             player.x = Math.max(0, Math.min(namespaces[namespace].config.width - visualPlayerSize, newX));
             player.y = Math.max(0, Math.min(namespaces[namespace].config.height - visualPlayerSize, newY));
             player.angle = data.angle;
         
-            checkCollisions(nsp, namespace, socket.id);
-            nsp.emit("gameState", namespaces[namespace]);
-        });
-        
-
-        // Recibir evento de eliminación de estrella
-        socket.on('removeEstrella', (estrella) => {
-            // Eliminar la estrella del array en el gameState correspondiente
-            const index = gameState.estrellas.findIndex(
-                (e) => e.x === estrella.x && e.y === estrella.y
-            );
-            if (index !== -1) {
-                gameState.estrellas.splice(index, 1); // Eliminar la estrella de la lista
-        
-                // Generar una nueva estrella en una posición aleatoria
-                const nuevaEstrella = generarEstrellaAleatoria(gameState);  // Pasa gameState aquí
-                gameState.estrellas.push(nuevaEstrella);  // Añadimos una nueva estrella
+            
+            if (namespaces[namespace].config.gameStarted && !namespaces[namespace].config.gameStop) {
+                checkCollisions(nsp, namespace, socket.id);
+                nsp.emit("gameState", namespaces[namespace]);
             }
-        
-            // Emitir el estado actualizado del juego solo al namespace actual
-            // nsp.emit('gameState', {
-            //     estrellas: gameState.estrellas,
-            //     players: Object.fromEntries(gameState.players)
-            // });
         });
 
         // Manejo de desconexión de jugador
@@ -184,41 +233,57 @@ export const createNamespace = (namespace) => {
             console.log(`Jugador desconectado: ${socket.id}`);
             // Eliminar el jugador del Map
             delete namespaces[namespace].players[socket.id];
+            // Si el administrador se desconecta, eliminarlo de la lista de usuarios
+            if (namespaces[namespace].users[socket.id]) {
+                delete namespaces[namespace].users[socket.id];
+            }
             nsp.emit('gameState', namespaces[namespace]);
         });
     });
-
-
-    // Emisión periódica del estado del juego a todos los jugadores (30Hz, 33ms)
-    setInterval(() => {
-        // Solo emite si hay cambios, evita emitir a todos siempre
-        // nsp.emit('gameState', {
-        //     estrellas: gameState.estrellas,
-        //     players: Object.fromEntries(gameState.players) // Convierte el Map a un objeto
-        // });
-    }, 1000 / 30); // 30Hz, emite cada 33ms
 };
 
 // Función para generar estrella con posición segura
 function generarEstrellaAleatoria(namespaceData) {
     const id = Math.random().toString(36).substr(2, 9);
+    const MAX_INTENTOS = 100;
     let isValidPosition = false;
     let x, y;
-
-    while (!isValidPosition) {
+    let intentos = 0;
+    
+    while (!isValidPosition && intentos < MAX_INTENTOS) {
+        intentos++;
         x = Math.random() * (namespaceData.config.width - 50);
         y = Math.random() * (namespaceData.config.height - 50);
         
-        // Verificar distancia con jugadores
         isValidPosition = true;
+
+        // Verificar distancia con jugadores
         for (const playerId in namespaceData.players) {
             const player = namespaceData.players[playerId];
             const distance = Math.hypot(player.x - x, player.y - y);
-            if (distance < 100) { // 100px de distancia mínima
+            if (distance < 100) {
                 isValidPosition = false;
                 break;
             }
         }
+
+        // Verificar distancia con otras estrellas
+        if (isValidPosition) {
+            for (const estrellaId in namespaceData.estrellas) {
+                const estrella = namespaceData.estrellas[estrellaId];
+                const distance = Math.hypot(estrella.x - x, estrella.y - y);
+                if (distance < 50) { // 50px de distancia mínima entre estrellas
+                    isValidPosition = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Si no encontró posición válida, forzar una
+    if (!isValidPosition) {
+        x = Math.random() * (namespaceData.config.width - 50);
+        y = Math.random() * (namespaceData.config.height - 50);
     }
     
     return { id, x, y };
@@ -248,6 +313,14 @@ function checkCollisions(nsp, namespace, playerId) {
             
             // Actualizar puntuación
             player.score = (player.score || 0) + 1;
+
+            // Si el jugador alcanza 10 puntos, terminar el juego
+            if (player.score >= gameState.config.estrellas) {
+                gameState.config.gameStarted = false;
+                nsp.emit('gameOver', gameState);
+                
+                return;
+            }
             
             // Notificar al jugador
             nsp.to(playerId).emit('updateScore', player.score);
