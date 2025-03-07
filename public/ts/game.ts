@@ -26,7 +26,7 @@ interface HyperspeedStatus {
 
 const urlParams = new URLSearchParams(window.location.search);
 const namespace = urlParams.get('namespace');
-const socket = io(`http://localhost:3000${namespace}`, { transports: ['websocket'], upgrade: true });
+const socket = io(`https://stars-hunters-production.up.railway.app${namespace}`, { transports: ['websocket'], upgrade: true });
 
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const instructionOverlay = document.getElementById('instructionOverlay') as HTMLElement;

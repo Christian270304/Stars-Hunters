@@ -1,7 +1,7 @@
 // Obtenir els paràmetres de la URL i configurar el socket
 const urlParams = new URLSearchParams(window.location.search);
 const namespace: string | null = urlParams.get("namespace");
-const socket = (window as any).io(`http://localhost:3000${namespace}`, {
+const socket = (window as any).io(`https://stars-hunters-production.up.railway.app${namespace}`, {
   upgrade: true,
 });
 

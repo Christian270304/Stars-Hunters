@@ -39,7 +39,7 @@ loginForm.addEventListener('submit', async (event: Event) => {
     const password = passwordInput.value;
 
     try {
-        const response = await fetch('http://localhost:3000/auth/login', {
+        const response = await fetch('https://stars-hunters-production.up.railway.app/auth/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ registerForm.addEventListener('submit', async (event: Event) => {
     const password = regPasswordInput.value;
 
     try {
-        const response = await fetch('http://localhost:3000/auth/signup', {
+        const response = await fetch('https://stars-hunters-production.up.railway.app/auth/signup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

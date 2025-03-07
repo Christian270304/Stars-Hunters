@@ -12,7 +12,7 @@ function showMessage(message, type) {
 async function createServer() {
     const serverName = document.getElementById('serverName').value;
     try {
-        const response = await fetch('http://localhost:3000/servers/create', {
+        const response = await fetch('https://stars-hunters-production.up.railway.app/servers/create', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -35,7 +35,7 @@ async function createServer() {
 }
 async function loadServers() {
     try {
-        const response = await fetch('http://localhost:3000/servers/list', {
+        const response = await fetch('https://stars-hunters-production.up.railway.app/servers/list', {
             credentials: 'include'
         });
         const servers = await response.json();
