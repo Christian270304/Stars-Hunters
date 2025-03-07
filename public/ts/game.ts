@@ -104,6 +104,7 @@ socket.on('config', (configuracion: GameConfig) => {
     canvas.height = config.height;
 });
 
+// Escoltar l'inici del joc
 socket.on('gameStart', () => {
     gameStarted = true;
     modal.classList.remove('active');

@@ -5,6 +5,7 @@ interface Server {
 
 const messageElement = document.getElementById('message') as HTMLElement;
 
+// Funció per mostrar missatges
 function showMessage(message: string, type: 'success' | 'error'): void {
     messageElement.textContent = message;
     messageElement.classList.remove('success', 'error'); 

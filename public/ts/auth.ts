@@ -10,6 +10,7 @@ const passwordInput = document.getElementById('password') as HTMLInputElement;
 const regUsernameInput = document.getElementById('regUsername') as HTMLInputElement;
 const regPasswordInput = document.getElementById('regPassword') as HTMLInputElement;
 
+// Funció per mostrar errors
 function showError(message: string) {
     errorMessageElement.textContent = message;
     errorMessageElement.classList.add('visible');
