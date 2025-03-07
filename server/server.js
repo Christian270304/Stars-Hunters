@@ -87,6 +87,7 @@ export const createNamespace = (namespace) => {
 
     nsp.on('connection', (socket) => {
         console.log(`Nuevo jugador conectado: ${socket.id}`);
+
         // Emitir al cliente su ID
         socket.emit('playerId', socket.id);
         
@@ -118,7 +119,6 @@ export const createNamespace = (namespace) => {
         socket.on('config', (data) => {
             const config = namespaces[namespace].config;
 
-             // Guardar la configuración en el objeto namespace
             config.width = data.width;
             config.height = data.height;
             config.estrellas = data.estrellas;
@@ -128,14 +128,10 @@ export const createNamespace = (namespace) => {
             }
         });
 
-
-        // server.js (dentro del evento 'startGame')
         socket.on("startGame", () => {
             namespaces[namespace].config.gameStop = false;
             
-            // Solo resetear si es un nuevo juego (no una reanudación)
             if (!namespaces[namespace].config.gameStarted) {
-                // Resetear puntos y estrellas solo al comenzar nuevo juego
                 Object.values(namespaces[namespace].players).forEach(player => {
                     player.score = 0;
                 });
@@ -163,11 +159,7 @@ export const createNamespace = (namespace) => {
         });
 
         socket.on("stopGame", () => {
-            console.log('Juego detenido');
-            // Detecar si el juego está en curso
             if (namespaces[namespace].config.gameStarted) {
-                // Dejar de emitir el estado del juego
-                //clearInterval(generateStarInterval);
                 nsp.emit('gameStop');
                 namespaces[namespace].config.gameStop = true;
             } else {
@@ -186,32 +178,25 @@ export const createNamespace = (namespace) => {
 
             let hypervelocidad = 1;
 
-            // Verificar si la hipervelocidad está activa
             if (player.Hyperspeed) {
                 hypervelocidad = HYPERSPEED_MULTIPLIER;
             }
 
-            // Verificar si la tecla de hipervelocidad está presionada y no está en cooldown
             if (data.hypervelocidad && !player.Hyperspeed && !player.speedCooldown) {
                 player.Hyperspeed = true;
                 hypervelocidad = HYPERSPEED_MULTIPLIER;
 
-                // Notificar al cliente que la hipervelocidad está activa
                 socket.emit('hyperspeedStatus', { status: 'active' });
 
-                // Desactivar la hipervelocidad después de la duración
                 setTimeout(() => {
                     player.Hyperspeed = false;
                     player.speedCooldown = true;
 
-                    // Notificar al cliente que la hipervelocidad ha terminado y está en cooldown
                     socket.emit('hyperspeedStatus', { status: 'cooldown' });
 
-                    // Activar el cooldown
                     setTimeout(() => {
                         player.speedCooldown = false;
 
-                        // Notificar al cliente que la hipervelocidad está disponible nuevamente
                         socket.emit('hyperspeedStatus', { status: 'available' });
                     }, HYPERSPEED_COOLDOWN);
                 }, HYPERSPEED_DURATION);
@@ -234,18 +219,42 @@ export const createNamespace = (namespace) => {
         // Manejo de desconexión de jugador
         socket.on('disconnect', () => {
             console.log(`Jugador desconectado: ${socket.id}`);
-            // Eliminar el jugador del Map
             delete namespaces[namespace].players[socket.id];
-            // Si el administrador se desconecta, eliminarlo de la lista de usuarios
+
             if (namespaces[namespace].users[socket.id]) {
                 delete namespaces[namespace].users[socket.id];
             }
+
+            if (Object.keys(namespaces[namespace].players).length === 0 &&
+                Object.keys(namespaces[namespace].users).length === 0) {
+                
+                delete namespaces[namespace];
+                io._nsps.delete(namespace); 
+        
+                setTimeout(async() => {
+                    try {
+                        const connection = await pool.getConnection();
+                        await connection.execute('DELETE FROM servers WHERE namespace = ?', [namespace]);
+                        connection.release();
+                        console.log(`Namespace ${namespace} eliminado de la base de datos`);
+                    } catch (error) {
+                        console.error(`Error al eliminar namespace de la base de datos:`, error);
+                    }
+                }, 1500);
+            }
+
             nsp.emit('gameState', namespaces[namespace]);
         });
     });
 };
 
-// Función para generar estrella con posición segura
+
+/**
+ * Genera una estrella en una posició aleatòria dins del joc, assegurant-se que no estigui massa a prop d'altres jugadors o estrelles.
+ *
+ * @param {Object} namespaceData - Les dades del namespace del joc.
+ * @returns {Object} - Un objecte que representa la nova estrella amb un id únic i coordenades x i y.
+ */
 function generarEstrellaAleatoria(namespaceData) {
     const id = Math.random().toString(36).substr(2, 9);
     const MAX_INTENTOS = 100;
@@ -260,7 +269,7 @@ function generarEstrellaAleatoria(namespaceData) {
         
         isValidPosition = true;
 
-        // Verificar distancia con jugadores
+        // Verificar distància amb jugadors
         for (const playerId in namespaceData.players) {
             const player = namespaceData.players[playerId];
             const distance = Math.hypot(player.x - x, player.y - y);
@@ -270,12 +279,12 @@ function generarEstrellaAleatoria(namespaceData) {
             }
         }
 
-        // Verificar distancia con otras estrellas
+        // Verificar distància amb altres estrelles
         if (isValidPosition) {
             for (const estrellaId in namespaceData.estrellas) {
                 const estrella = namespaceData.estrellas[estrellaId];
                 const distance = Math.hypot(estrella.x - x, estrella.y - y);
-                if (distance < 50) { // 50px de distancia mínima entre estrellas
+                if (distance < 50) { // 50px de distància mínima entre estrelles
                     isValidPosition = false;
                     break;
                 }
@@ -283,7 +292,6 @@ function generarEstrellaAleatoria(namespaceData) {
         }
     }
 
-    // Si no encontró posición válida, forzar una
     if (!isValidPosition) {
         x = Math.random() * (namespaceData.config.width - 50);
         y = Math.random() * (namespaceData.config.height - 50);
@@ -292,7 +300,17 @@ function generarEstrellaAleatoria(namespaceData) {
     return { id, x, y };
 }
 
-// Función de detección de colisiones
+
+/**
+ * Comprova les col·lisions entre un jugador i les estrelles.
+ * Si un jugador col·lisiona amb una estrella, l'estrella es reemplaça per una nova estrella aleatòria,
+ * s'incrementa la puntuació del jugador i s'actualitza l'estat del joc.
+ * Si la puntuació del jugador arriba al límit configurat, el joc es dona per acabat.
+ *
+ * @param {Object} nsp - El namespace del joc.
+ * @param {string} namespace - El nom de l'espai de noms del joc.
+ * @param {string} playerId - L'identificador del jugador.
+ */
 function checkCollisions(nsp, namespace, playerId) {
     const gameState = namespaces[namespace];
     const player = gameState.players[playerId];
@@ -306,29 +324,23 @@ function checkCollisions(nsp, namespace, playerId) {
             player.y - estrella.y
         );
 
-        if (distance < 30) { // Radio de colisión
-            // Eliminar estrella
+        if (distance < 30) { 
             delete gameState.estrellas[starId];
-            
-            // Generar nueva estrella
+
             const nuevaEstrella = generarEstrellaAleatoria(gameState);
             gameState.estrellas[nuevaEstrella.id] = nuevaEstrella;
-            
-            // Actualizar puntuación
+
             player.score = (player.score || 0) + 1;
 
-            // Si el jugador alcanza 10 puntos, terminar el juego
             if (player.score >= gameState.config.estrellas) {
                 gameState.config.gameStarted = false;
                 nsp.emit('gameOver', gameState);
                 
                 return;
             }
-            
-            // Notificar al jugador
+
             nsp.to(playerId).emit('updateScore', player.score);
-            
-            // Actualizar estado del juego para todos
+
             nsp.emit('gameState', gameState);
             break;
         }

@@ -64,7 +64,7 @@ async function loadServers(): Promise<void> {
             serverList.appendChild(serverCard);
         });
     } catch (error) {
-        showMessage('Error loading servers: ' + error, 'error');
+        console.log('Error loading servers: ' + error, 'error');
     }
 }
 
@@ -80,7 +80,6 @@ function showModal(namespace: string): void {
     // Manejar clic en el botón "Admin"
     const adminBtn = document.getElementById('adminBtn') as HTMLButtonElement;
     adminBtn.onclick = () => {
-        adminBtn.disabled = true;
         window.location.href = `/admin.html?namespace=${namespace}`;
     };
 

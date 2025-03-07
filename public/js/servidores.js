@@ -53,7 +53,7 @@ async function loadServers() {
         });
     }
     catch (error) {
-        showMessage('Error loading servers: ' + error, 'error');
+        console.log('Error loading servers: ' + error, 'error');
     }
 }
 function selectServer(namespace) {
@@ -66,7 +66,6 @@ function showModal(namespace) {
     // Manejar clic en el botón "Admin"
     const adminBtn = document.getElementById('adminBtn');
     adminBtn.onclick = () => {
-        adminBtn.disabled = true;
         window.location.href = `/admin.html?namespace=${namespace}`;
     };
     // Manejar clic en el botón "Jugar"
