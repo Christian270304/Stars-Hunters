@@ -1,16 +1,26 @@
-const messageElement = document.getElementById('message');
+interface Server {
+    name: string;
+    namespace: string;
+}
+
+const messageElement = document.getElementById('message') as HTMLElement;
+
 // Funció per mostrar missatges
-function showMessage(message, type) {
+function showMessage(message: string, type: 'success' | 'error'): void {
     messageElement.textContent = message;
-    messageElement.classList.remove('success', 'error');
-    messageElement.classList.add(type);
+    messageElement.classList.remove('success', 'error'); 
+    messageElement.classList.add(type); 
+
     messageElement.style.display = 'block';
+
     setTimeout(() => {
         messageElement.style.display = 'none';
     }, 3000);
 }
-async function createServer() {
-    const serverName = document.getElementById('serverName').value;
+
+async function createServer(): Promise<void> {
+    const serverName = (document.getElementById('serverName') as HTMLInputElement).value;
+
     try {
         const response = await fetch('http://localhost:3000/servers/create', {
             method: 'POST',
@@ -20,27 +30,29 @@ async function createServer() {
             },
             body: JSON.stringify({ name: serverName })
         });
+
         if (response.ok) {
             showMessage('Servidor creat amb èxit', 'success');
             loadServers();
-        }
-        else {
+        } else {
             const errorData = await response.json();
             showMessage('Error creant el servidor: ' + errorData.message, 'error');
         }
-    }
-    catch (error) {
+    } catch (error) {
         console.log('Error creant el servidor: ' + error);
     }
 }
-async function loadServers() {
+
+async function loadServers(): Promise<void> {
     try {
         const response = await fetch('http://localhost:3000/servers/list', {
             credentials: 'include'
         });
-        const servers = await response.json();
-        const serverList = document.getElementById('server-list');
+
+        const servers: Server[] = await response.json();
+        const serverList = document.getElementById('server-list') as HTMLElement;
         serverList.innerHTML = '';
+
         servers.forEach((server) => {
             const serverCard = document.createElement('div');
             serverCard.className = 'server-card';
@@ -52,46 +64,52 @@ async function loadServers() {
             `;
             serverList.appendChild(serverCard);
         });
-    }
-    catch (error) {
+    } catch (error) {
         console.log('Error loading servers: ' + error, 'error');
     }
 }
-function selectServer(namespace) {
+
+function selectServer(namespace: string): void {
     console.log(`Conectando al servidor con namespace: ${namespace}`);
     showModal(namespace);
 }
-function showModal(namespace) {
-    const modal = document.getElementById('modal');
+
+function showModal(namespace: string): void {
+    const modal = document.getElementById('modal') as HTMLElement;
     modal.style.display = 'flex';
+
     // Manejar clic en el botón "Admin"
-    const adminBtn = document.getElementById('adminBtn');
+    const adminBtn = document.getElementById('adminBtn') as HTMLButtonElement;
     adminBtn.onclick = () => {
         window.location.href = `/admin.html?namespace=${namespace}`;
     };
+
     // Manejar clic en el botón "Jugar"
-    const playBtn = document.getElementById('playBtn');
+    const playBtn = document.getElementById('playBtn') as HTMLButtonElement;
     playBtn.onclick = () => {
         window.location.href = `/game.html?namespace=${namespace}`;
     };
 }
-function closeModal() {
-    const modal = document.getElementById('modal');
+
+function closeModal(): void {
+    const modal = document.getElementById('modal') as HTMLElement;
     modal.style.display = 'none';
 }
-window.onclick = (event) => {
-    const modal = document.getElementById('modal');
+
+window.onclick = (event: MouseEvent): void => {
+    const modal = document.getElementById('modal') as HTMLElement;
     if (event.target === modal) {
         modal.style.display = 'none';
     }
-};
+}
+
 setInterval(() => {
     loadServers();
 }, 5000);
+
 loadServers();
-const serverNameInput = document.getElementById('serverName');
-serverNameInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter')
-        createServer();
+
+const serverNameInput = document.getElementById('serverName') as HTMLInputElement;
+serverNameInput.addEventListener('keypress', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') createServer();
 });
-//# sourceMappingURL=servidores.js.map

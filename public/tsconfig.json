@@ -1,0 +1,13 @@
+
+{
+	"compilerOptions": {
+		"module": "NodeNext",
+		"moduleResolution": "nodenext",
+		"target": "es2022",
+		"sourceMap": true,
+		"noEmitOnError": true,
+		"noImplicitAny": true,
+		"strict": true,
+		"outDir": "js"
+	}
+}

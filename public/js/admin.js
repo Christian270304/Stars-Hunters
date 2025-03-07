@@ -27,6 +27,7 @@ socket.on("adminExist", (message) => {
     alert(message);
     window.location.href = "/servidores.html";
 });
+// Capturar inicio de juego
 socket.on("gameStart", () => {
     gameLoop();
 });
