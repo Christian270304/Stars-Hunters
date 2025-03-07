@@ -254,6 +254,50 @@ function startConfetti() {
     }
 }
 
+let hipervelocitat = false;
+let powerupActive = false;
+let interval = 1000;
+let temps = 0;
+let powerupDuration = 5000;
+let velocidad = 1;
+
+// Iniciar un intervalo de 1 segundo
+setInterval(() => {
+    if (!powerupActive && !hipervelocitat) { // Solo contar si no hay hipervelocidad activa
+        ++temps;
+        if (temps === 10) {
+            hipervelocitat = true;
+            temps = 0; // Reiniciar el contador solo cuando se activa la hipervelocidad
+
+        }
+    }
+
+
+
+}, interval);
+
+setInterval(() => {
+
+    let div = document.getElementById('hipervelocitat');
+    div.innerHTML = hipervelocitat ? "Hipervelocitat disponible" : "Hipervelocitat NO disponible";
+}, 1);
+
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'h' && hipervelocitat) {
+        hipervelocitat = false;
+        powerupActive = true;
+        velocidad = 5;
+
+        setTimeout(() => {
+            powerupActive = false;
+            velocidad = 1;
+            temps = 0; 
+        }, powerupDuration);
+    }
+});
+
+
 // Función para detener la animación de confeti
 function stopConfetti() {
     const confettiContainer = document.querySelector('.confetti-container');
